@@ -167,8 +167,8 @@ const IKIGAI = [
 const DM = {
   D:{name:"Dominance",   short:"Dominant",  color:"#C05050", bg:"#FEF2F2", desc:"Décidé · Direct · Orienté résultats"},
   I:{name:"Influence",   short:"Influent",  color:"#C07030", bg:"#FFF7ED", desc:"Enthousiaste · Persuasif · Social"},
-  S:{name:"Stabilité",   short:"Stable",    color:"#2A80C0", bg:"#EFF6FF", desc:"Patient · Constant · Empathique"},
-  C:{name:"Conformité",  short:"Consciencieux", color:"#2A9060", bg:"#F0FDF4", desc:"Analytique · Précis · Orienté qualité"},
+  S:{name:"Stabilité",   short:"Stable",    color:"#2A9060", bg:"#F0FDF4", desc:"Patient · Constant · Empathique"},
+  C:{name:"Conformité",  short:"Consciencieux", color:"#2A80C0", bg:"#EFF6FF", desc:"Analytique · Précis · Orienté qualité"},
 };
 
 const EDGE = {
@@ -350,7 +350,7 @@ export default function App(){
     const discRows = ["D","I","S","C"].map(d => `
       <tr>
         <td style="padding:8px 12px;font-weight:600;color:${
-          {D:"#C05050",I:"#C07030",S:"#2A80C0",C:"#2A9060"}[d]
+          {D:"#C05050",I:"#C07030",S:"#2A9060",C:"#2A80C0"}[d]
         }">${d}</td>
         <td style="padding:8px 12px;color:#475569">${
           {D:"Dominance",I:"Influence",S:"Stabilité",C:"Conformité"}[d]
@@ -479,7 +479,7 @@ export default function App(){
   </div>
 
   <div class="footer">
-    <p>Human Blueprint · Toulouse Business School · Données traitées localement — aucun stockage externe</p>
+    <p>Human Blueprint · INSEEC / SUPDEPUB · Données traitées localement — aucun stockage externe</p>
     <p style="margin-top:6px">Généré le ${new Date().toLocaleDateString("fr-FR",{day:"numeric",month:"long",year:"numeric"})}</p>
   </div>
 </div>
@@ -532,7 +532,7 @@ export default function App(){
               </div>
               <p style={{fontSize:"9px",letterSpacing:"5px",color:"#C9A96E",
                 textTransform:"uppercase",marginBottom:"16px"}}>
-                Human Blueprint · Toulouse Business School
+                Human Blueprint · INSEEC / SUPDEPUB
               </p>
             </div>
 
