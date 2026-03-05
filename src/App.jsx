@@ -157,10 +157,10 @@ const IKIGAI = [
     ph:"Les besoins réels de votre environnement, des organisations, de la société qui font écho à vos valeurs profondes…",
   },
   {
-    k:"paid", title:"Ce pour quoi vous pouvez être rémunéré", label:"Viabilité économique",
+    k:"paid", title:"Ce qui peut vous faire vivre", label:"Potentiel économique",
     Icon:Briefcase, color:"#B8862A",
-    desc:"Quelles sont les voies économiques qui semblent authentiques à qui vous êtes ? Comment votre combinaison unique de passion et de compétences pourrait-elle se traduire en valeur durable — sans vous trahir ?",
-    ph:"Les domaines où votre singularité a une valeur économique réelle. Ce pour quoi des entreprises, organisations ou clients paieraient…",
+    desc:"Imaginez que vous faites ce que vous aimez ET ce en quoi vous êtes doué, tout en aidant les autres. Concrètement, comment pourriez-vous en vivre ? Quels métiers, missions ou activités pourraient vous rémunérer pour ça ?",
+    ph:"Ex : je pourrais être payé pour former des équipes, créer du contenu, conseiller des entreprises, accompagner des personnes… Sois concret et spontané, pas besoin que ce soit parfait.",
   },
 ];
 
@@ -553,7 +553,7 @@ export default function App(){
             <div className="au d3" style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",
               gap:"12px",marginBottom:"48px",maxWidth:"580px",margin:"0 auto 48px"}}>
               {[
-                {Icon:Brain,  label:"Moteur DISC",       desc:"20 questions · choix forcé"},
+                {Icon:Brain,  label:"Test DISC",         desc:"20 questions · choix forcé"},
                 {Icon:Heart,  label:"Exploration Ikigai", desc:"4 piliers · réflexion guidée"},
                 {Icon:Shield, label:"Atout Humain",       desc:"Ton bouclier face à l'IA"},
               ].map(({Icon,label,desc},i)=>(
