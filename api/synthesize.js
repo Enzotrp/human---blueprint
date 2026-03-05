@@ -64,7 +64,8 @@ Regles absolues :
 - when parmi : Cette semaine, Ce mois, Dans 3 mois
 - Tout le contenu en francais
 - JSON pur uniquement, aucun texte avant ou apres
-- Chaque champ doit etre specifique a CE profil, aucune generalite`;
+- Chaque champ doit etre specifique a CE profil, aucune generalite
+- IMPORTANT : dans le champ "identity", ne jamais mentionner "Profil D", "Profil I", "Profil S", "Profil C", "Profil S-I" ou toute notation technique DISC. Decris la personne en langage naturel, humain et accessible, comme si tu t expliquais a quelqu un qui ne connait pas le DISC`;
 
     const anthropicRes = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
