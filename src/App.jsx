@@ -775,51 +775,80 @@ export default function App(){
         <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",
           justifyContent:"center",padding:"60px 24px",
           background:"linear-gradient(160deg,#08111E 0%,#0D1B2E 50%,#162540 100%)"}}>
-          <div style={{maxWidth:"640px",width:"100%",textAlign:"center"}}>
+          <div style={{maxWidth:"560px",width:"100%",textAlign:"center"}}>
 
-            {/* Logo mark */}
-            <div className="au" style={{marginBottom:"40px"}}>
+            {/* Icône + eyebrow */}
+            <div className="au">
               <div style={{width:"56px",height:"56px",borderRadius:"50%",margin:"0 auto 24px",
                 background:"rgba(201,169,110,.1)",border:"1px solid rgba(201,169,110,.3)",
                 display:"flex",alignItems:"center",justifyContent:"center"}} className="glow-it">
                 <Eye size={24} color="#C9A96E"/>
               </div>
               <p style={{fontSize:"9px",letterSpacing:"5px",color:"#C9A96E",
-                textTransform:"uppercase",marginBottom:"16px"}}>
+                textTransform:"uppercase",marginBottom:"40px"}}>
                 Human Blueprint · INSEEC / SUPDEPUB
               </p>
             </div>
 
+            {/* Titre */}
             <h1 className="fd au d1" style={{fontSize:"clamp(44px,7vw,78px)",fontWeight:400,
               color:"#FAF8F4",lineHeight:.98,marginBottom:"24px",letterSpacing:"-0.5px"}}>
               Connais-toi<br/><em style={{color:"#C9A96E"}}>toi-même.</em>
             </h1>
 
+            {/* Accroche */}
             <p className="au d2" style={{fontSize:"16px",color:"#94A3B8",lineHeight:1.8,
-              maxWidth:"500px",margin:"0 auto 14px",fontWeight:300}}>
-              Un outil psychométrique neutre et factuel pour révéler ton avantage humain
-              unique à l'ère de l'intelligence artificielle.
-            </p>
-            <p className="au d3" style={{fontSize:"12px",color:"#475569",marginBottom:"52px"}}>
-              2 modules · 25–35 min · Données traitées localement, non conservées
+              maxWidth:"460px",margin:"0 auto 40px",fontWeight:300}}>
+              En 15 minutes, découvre comment tu fonctionnes,
+              ce qui te donne de l'énergie et où tu pourrais aller.
             </p>
 
-            <div className="au d3" style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",
-              gap:"12px",marginBottom:"48px",maxWidth:"580px",margin:"0 auto 48px"}}>
+            {/* Posture */}
+            <div className="au d3" style={{
+              background:"rgba(255,255,255,.04)",
+              border:"1px solid rgba(255,255,255,.08)",
+              borderRadius:"16px",padding:"22px 24px",
+              marginBottom:"16px",textAlign:"left",
+            }}>
+              <p style={{fontSize:"9px",letterSpacing:"2.5px",textTransform:"uppercase",
+                color:"#475569",fontWeight:600,marginBottom:"14px",textAlign:"center"}}>
+                Pour en tirer le maximum
+              </p>
               {[
-                {Icon:Brain,  label:"Test DISC",         desc:"28 questions · choix forcé"},
-                {Icon:Heart,  label:"Exploration Ikigai", desc:"4 piliers · réflexion guidée"},
-                {Icon:Shield, label:"Atout Humain",       desc:"Ton bouclier face à l'IA"},
-              ].map(({Icon,label,desc},i)=>(
-                <div key={i} style={{background:"rgba(255,255,255,.04)",
-                  border:"1px solid rgba(255,255,255,.08)",borderRadius:"12px",padding:"20px 16px"}}>
-                  <Icon size={18} color="#C9A96E" style={{marginBottom:"10px"}}/>
-                  <p style={{fontSize:"12px",color:"#E2E8F0",fontWeight:500,marginBottom:"4px"}}>{label}</p>
-                  <p style={{fontSize:"11px",color:"#475569"}}>{desc}</p>
+                ["comme tu es vraiment", "Réponds ", ", pas comme tu voudrais être vu·e."],
+                ["prends le temps", "Sur l'Ikigai, ", " — les réponses courtes donnent des résultats creux."],
+                ["pas de bonne ou mauvaise réponse", "Il n'y a ", " — seulement la tienne."],
+              ].map(([bold, before, after], i, arr)=>(
+                <div key={i} style={{
+                  display:"flex",alignItems:"flex-start",gap:"14px",
+                  padding:"10px 0",
+                  borderBottom: i<arr.length-1 ? "1px solid rgba(255,255,255,.05)" : "none",
+                }}>
+                  <div style={{width:"18px",height:"18px",borderRadius:"50%",flexShrink:0,
+                    border:"1.5px solid rgba(201,169,110,.4)",marginTop:"2px"}}/>
+                  <p style={{fontSize:"13px",color:"#94A3B8",lineHeight:1.6,fontWeight:300}}>
+                    {before}<strong style={{color:"#E2E8F0",fontWeight:500}}>{bold}</strong>{after}
+                  </p>
                 </div>
               ))}
             </div>
 
+            {/* Disclaimer */}
+            <div className="au d3" style={{
+              display:"flex",alignItems:"flex-start",gap:"12px",
+              padding:"0 4px",marginBottom:"44px",textAlign:"left",
+            }}>
+              <div style={{width:"2px",minHeight:"32px",background:"rgba(201,169,110,.3)",
+                borderRadius:"2px",flexShrink:0,marginTop:"2px"}}/>
+              <p style={{fontSize:"12px",color:"#475569",lineHeight:1.65,fontStyle:"italic"}}>
+                <strong style={{fontStyle:"normal",color:"#C9A96E",fontWeight:500}}>
+                  Premier miroir, pas vérité absolue.
+                </strong>{" "}
+                Ce bilan lance une réflexion — il ne te définit pas.
+              </p>
+            </div>
+
+            {/* CTA */}
             <div className="au d4">
               <button className="bg" onClick={()=>setPh("disc-in")}
                 style={{fontSize:"15px",padding:"15px 44px",borderRadius:"9px"}}>
@@ -833,6 +862,7 @@ export default function App(){
                 </p>
               </div>
             </div>
+
           </div>
         </div>
       )}
