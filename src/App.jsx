@@ -162,30 +162,67 @@ const QS = [
   { id:20, w:[{t:"Autoritaire",d:"D"},{t:"Rayonnant",d:"I"},{t:"Accommodant",d:"S"},{t:"Consciencieux",d:"C"}]},
 ];
 
+// Chaque pilier Ikigai = 2 micro-questions combinées en une réponse
 const IKIGAI = [
   {
-    k:"love", title:"Ce que vous aimez", label:"Passions intérieures",
-    Icon:Heart, color:"#C0586A",
-    desc:"Quelles activités vous font perdre la notion du temps ? Quels sujets pourriez-vous explorer sans fin, non par obligation, mais par pur engagement intrinsèque ? Décrivez sans filtre, au-delà des attentes sociales.",
-    ph:"Activités, sujets, expériences qui vous animent sincèrement. Pensez aux moments où vous êtes pleinement vous-même, sans effort particulier…",
+    k:"love", title:"Ce que tu aimes", label:"Passions intérieures", Icon:Heart, color:"#C0586A",
+    subs:[
+      {
+        q:"Quand tu perds la notion du temps, tu fais quoi ?",
+        hint:"Pense à tes loisirs, sujets de curiosité, activités où tu es pleinement toi-même.",
+        ph:"Ex : écrire, débattre d'idées, organiser des événements, créer des trucs, explorer des pays…"
+      },
+      {
+        q:"Qu'est-ce que tu adorerais faire même si on ne te payait pas ?",
+        hint:"Ce qui te donne de l'énergie, pas ce que tu crois devoir répondre.",
+        ph:"Ex : accompagner des gens, résoudre des problèmes complexes, raconter des histoires…"
+      }
+    ]
   },
   {
-    k:"good", title:"Ce en quoi vous excellez", label:"Forces naturelles",
-    Icon:Star, color:"#4A7CC0",
-    desc:"Pour quoi les autres font-ils souvent appel à vous ? Qu'est-ce qui vous vient si naturellement que vous oubliez que tout le monde n'en est pas capable ? Incluez aptitudes formelles et intuitions.",
-    ph:"Vos forces naturelles, compétences développées, aptitudes qui émergent sans effort. Ce qui vous est évident mais impressionne les autres…",
+    k:"good", title:"Ce en quoi tu excelles", label:"Forces naturelles", Icon:Star, color:"#4A7CC0",
+    subs:[
+      {
+        q:"Pour quoi les autres te demandent-ils de l'aide ?",
+        hint:"Ce qui te vient naturellement mais impressionne les autres. Pas besoin d'être diplômé pour ça.",
+        ph:"Ex : écouter, convaincre, analyser, organiser, créer, expliquer clairement…"
+      },
+      {
+        q:"Quelle compétence as-tu développée sans vraiment t'en rendre compte ?",
+        hint:"Ce qui t'est devenu évident mais que beaucoup trouvent difficile.",
+        ph:"Ex : gérer des conflits, visualiser des données, comprendre les gens rapidement…"
+      }
+    ]
   },
   {
-    k:"need", title:"Ce dont le monde a besoin", label:"Valeurs & impact",
-    Icon:Globe, color:"#3D9E70",
-    desc:"Quels problèmes du monde vous concernent profondément ? Quel changement voudriez-vous voir — dans les organisations, la société, les communautés — et qui résonne avec votre sens de la justice ou du sens ?",
-    ph:"Les besoins réels de votre environnement, des organisations, de la société qui font écho à vos valeurs profondes…",
+    k:"need", title:"Ce dont le monde a besoin", label:"Valeurs & impact", Icon:Globe, color:"#3D9E70",
+    subs:[
+      {
+        q:"Quel problème t'énerve ou te touche vraiment dans le monde ?",
+        hint:"Ce qui te révolte, t'indigne ou t'inspire à agir. Petit ou grand, local ou global.",
+        ph:"Ex : le manque de sens au travail, les inégalités d'éducation, la déconnexion humaine…"
+      },
+      {
+        q:"Quel changement voudrais-tu voir dans 10 ans — et que tu aimerais contribuer à créer ?",
+        hint:"Sois sincère, même si ça paraît ambitieux.",
+        ph:"Ex : des organisations plus humaines, des jeunes qui savent qui ils sont, plus de créativité…"
+      }
+    ]
   },
   {
-    k:"paid", title:"Ce qui peut vous faire vivre", label:"Potentiel économique",
-    Icon:Briefcase, color:"#B8862A",
-    desc:"Imaginez que vous faites ce que vous aimez ET ce en quoi vous êtes doué, tout en aidant les autres. Concrètement, comment pourriez-vous en vivre ? Quels métiers, missions ou activités pourraient vous rémunérer pour ça ?",
-    ph:"Ex : je pourrais être payé pour former des équipes, créer du contenu, conseiller des entreprises, accompagner des personnes… Sois concret et spontané, pas besoin que ce soit parfait.",
+    k:"paid", title:"Ce qui peut te faire vivre", label:"Potentiel économique", Icon:Briefcase, color:"#B8862A",
+    subs:[
+      {
+        q:"Si tu combinais ce que tu aimes + ce en quoi tu es doué, quel métier ou mission ça pourrait donner ?",
+        hint:"Pas besoin que ce soit parfait. Brainstorme librement.",
+        ph:"Ex : consultant, formateur, entrepreneur social, créateur de contenu, coach, directeur artistique…"
+      },
+      {
+        q:"Pour quoi des entreprises ou des personnes seraient prêtes à te payer ?",
+        hint:"Pense à la valeur que tu crées naturellement pour les autres.",
+        ph:"Ex : clarifier des idées complexes, motiver une équipe, concevoir des expériences, analyser des données…"
+      }
+    ]
   },
 ];
 
@@ -421,11 +458,24 @@ function Badge({color,bg,label}){
 ───────────────────────────────────────────── */
 export default function App(){
   const [ph,  setPh]  = useState("home");
+  // Ordre mélangé des 4 mots par question — calculé une fois au chargement
+  const [shuffled] = useState(() =>
+    QS.map(q => {
+      const indices = [0,1,2,3];
+      // Fisher-Yates shuffle
+      for (let i = 3; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [indices[i], indices[j]] = [indices[j], indices[i]];
+      }
+      return indices.map(i => q.w[i]);
+    })
+  );
   const [qi,  setQi]  = useState(0);
   const [ans, setAns] = useState([]);
   const [cur, setCur] = useState({md:null,ld:null});
-  const [is,  setIs]  = useState(0);
-  const [ik,  setIk]  = useState({love:"",good:"",need:"",paid:""});
+  const [is,  setIs]  = useState(0);   // index pilier ikigai (0-3)
+  const [iss, setIss] = useState(0);   // index sous-question (0-1)
+  const [ik,  setIk]  = useState({love:["",""],good:["",""],need:["",""],paid:["",""]});
   const [ctx, setCtx] = useState({promo:"",level:"",question:""});
   const [sc,  setSc]  = useState(null);
   const [out, setOut] = useState(null);
@@ -477,10 +527,15 @@ export default function App(){
     }
   };
 
-  const goProcess=()=>{ setPh("wait"); runSynth(sc,ik,ctx); };
+  const goProcess=()=>{ setPh("wait"); runSynth(sc, {
+          love: ik.love.filter(Boolean).join(' / '),
+          good: ik.good.filter(Boolean).join(' / '),
+          need: ik.need.filter(Boolean).join(' / '),
+          paid: ik.paid.filter(Boolean).join(' / '),
+        }, ctx); };
   const reset=()=>{
     setPh("home");setQi(0);setAns([]);setCur({md:null,ld:null});
-    setIs(0);setIk({love:"",good:"",need:"",paid:""});
+    setIs(0);setIss(0);setIk({love:["",""],good:["",""],need:["",""],paid:["",""]});
     setCtx({promo:"",level:"",question:""});setSc(null);setOut(null);
   };
 
@@ -841,7 +896,7 @@ export default function App(){
 
             {/* Grille 2x2 */}
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px",marginBottom:"36px"}}>
-              {q.w.map((w,i)=>{
+              {shuffled[qi].map((w,i)=>{
                 const isM=cur.md===w.d, isL=cur.ld===w.d;
                 return(
                   <div key={i} className={`wcard${isM?" most":isL?" least":""}`}>
@@ -945,43 +1000,117 @@ export default function App(){
               </div>
             </div>
 
-            <p style={{fontSize:"14px",color:"#64748B",lineHeight:1.8,
-              marginBottom:"24px",fontWeight:300}}>{step.desc}</p>
+            {/* Micro-questions du pilier */}
+            {step.subs.map((sub, si) => {
+              const val = ik[step.k][si] || "";
+              const minLen = 30;
+              const done = val.length >= minLen;
+              const isActive = si === iss;
+              const isPast   = si < iss;
+              return (
+                <div key={si} style={{
+                  marginBottom:"20px",
+                  opacity: isActive||isPast ? 1 : 0.4,
+                  transition:"opacity .3s",
+                }}>
+                  {/* Numéro + question */}
+                  <div style={{display:"flex",alignItems:"flex-start",gap:"12px",marginBottom:"10px"}}>
+                    <div style={{
+                      width:"24px",height:"24px",borderRadius:"50%",flexShrink:0,marginTop:"1px",
+                      background: isPast ? step.color : isActive ? step.color+"22" : "#E2DDD6",
+                      border:`1.5px solid ${isPast||isActive ? step.color : "#E2DDD6"}`,
+                      display:"flex",alignItems:"center",justifyContent:"center",
+                    }}>
+                      {isPast
+                        ? <span style={{fontSize:"11px",color:"#fff",fontWeight:700}}>✓</span>
+                        : <span style={{fontSize:"11px",color:step.color,fontWeight:700}}>{si+1}</span>
+                      }
+                    </div>
+                    <div>
+                      <p style={{fontSize:"15px",fontWeight:500,color:"#0D1B2E",
+                        lineHeight:1.4,marginBottom:"4px"}}>{sub.q}</p>
+                      <p style={{fontSize:"12px",color:"#94A3B8",fontStyle:"italic",
+                        lineHeight:1.5}}>{sub.hint}</p>
+                    </div>
+                  </div>
 
-            <textarea value={ik[step.k]}
-              onChange={e=>setIk(v=>({...v,[step.k]:e.target.value}))}
-              placeholder={step.ph} rows={6}
-              style={{width:"100%",padding:"20px",border:`1.5px solid #E2DDD6`,
-                borderRadius:"12px",fontSize:"14px",color:"#0D1B2E",
-                background:"#FFFFFF",lineHeight:1.7,resize:"vertical"}}
-              onFocus={e=>e.target.style.borderColor=step.color}
-              onBlur={e=>e.target.style.borderColor="#E2DDD6"}
-            />
+                  {/* Zone de réponse — visible seulement si active */}
+                  {isActive && (
+                    <>
+                      <textarea
+                        value={val}
+                        onChange={e=>setIk(v=>({...v,[step.k]:v[step.k].map((x,j)=>j===si?e.target.value:x)}))}
+                        placeholder={sub.ph} rows={3}
+                        style={{width:"100%",padding:"16px 18px",
+                          border:`1.5px solid ${done?"#E2DDD6":step.color+"60"}`,
+                          borderRadius:"10px",fontSize:"14px",color:"#0D1B2E",
+                          background:"#FFFFFF",lineHeight:1.7,resize:"vertical",
+                          transition:"border-color .2s"}}
+                        onFocus={e=>e.target.style.borderColor=step.color}
+                        onBlur={e=>e.target.style.borderColor=done?"#E2DDD6":step.color+"60"}
+                      />
+                      <div style={{display:"flex",justifyContent:"space-between",
+                        alignItems:"center",marginTop:"8px"}}>
+                        <p style={{fontSize:"11px",color: done?"#2A9060":"#94A3B8"}}>
+                          {done ? "✓ Bien — tu peux encore enrichir" : `Encore ${minLen-val.length} mots min.`}
+                        </p>
+                        {si < step.subs.length-1 && done && (
+                          <button onClick={()=>setIss(si+1)}
+                            style={{padding:"7px 16px",background:step.color,color:"#fff",
+                              border:"none",borderRadius:"6px",fontSize:"12px",
+                              fontWeight:500,cursor:"pointer",fontFamily:"DM Sans,sans-serif"}}>
+                            Question suivante →
+                          </button>
+                        )}
+                      </div>
+                    </>
+                  )}
 
-            <div style={{display:"flex",justifyContent:"space-between",
-              alignItems:"center",marginTop:"10px",marginBottom:"32px"}}>
-              <p style={{fontSize:"11.5px",color:"#94A3B8"}}>
-                {ik[step.k].length<60
-                  ?`Encore ${60-ik[step.k].length} car. pour une profondeur suffisante`
-                  :"✓ Bonne profondeur — continue à enrichir si tu le souhaites"}
-              </p>
-              <p style={{fontSize:"11px",color:"#C4B8A8"}}>{ik[step.k].length} car.</p>
-            </div>
+                  {/* Résumé réponse si passée */}
+                  {isPast && (
+                    <div style={{marginLeft:"36px",padding:"10px 14px",
+                      background:step.color+"0A",borderRadius:"8px",
+                      border:`1px solid ${step.color}20`,
+                      display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:"8px"}}>
+                      <p style={{fontSize:"13px",color:"#475569",lineHeight:1.6,
+                        fontStyle:"italic",flex:1}}>{val}</p>
+                      <button onClick={()=>setIss(si)}
+                        style={{fontSize:"10px",color:step.color,background:"none",
+                          border:"none",cursor:"pointer",flexShrink:0,paddingTop:"2px"}}>
+                        Modifier
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
 
-            <div style={{display:"flex",justifyContent:"space-between"}}>
-              <button className="bs" onClick={()=>is>0?setIs(is-1):setPh("ik-in")}>
+            {/* Navigation pilier */}
+            <div style={{display:"flex",justifyContent:"space-between",marginTop:"8px"}}>
+              <button className="bs" onClick={()=>{
+                if(iss>0){setIss(0);}
+                else if(is>0){setIs(is-1);setIss(1);}
+                else{setPh("ik-in");}
+              }}>
                 <ChevronLeft size={16}/> Retour
               </button>
-              <button onClick={()=>is<3?setIs(is+1):setPh("ctx")}
-                disabled={ik[step.k].length<60}
-                style={{padding:"13px 28px",border:"none",borderRadius:"8px",fontSize:"14px",
-                  fontWeight:500,fontFamily:"DM Sans,sans-serif",
-                  display:"inline-flex",alignItems:"center",gap:"8px",
-                  background:ik[step.k].length>=60?"#0D1B2E":"#E2DDD6",
-                  color:ik[step.k].length>=60?"#fff":"#94A3B8",
-                  cursor:ik[step.k].length>=60?"pointer":"not-allowed",transition:"all .2s"}}>
-                {is===3?"Continuer":"Étape suivante"} <ChevronRight size={16}/>
-              </button>
+              {(() => {
+                const allFilled = step.subs.every((_,si)=>(ik[step.k][si]||"").length>=30);
+                const label = is===3 ? "Terminer l'Ikigai" : "Pilier suivant";
+                return (
+                  <button
+                    onClick={()=>{if(is<3){setIs(is+1);setIss(0);}else{setPh("ctx");}}}
+                    disabled={!allFilled}
+                    style={{padding:"13px 28px",border:"none",borderRadius:"8px",fontSize:"14px",
+                      fontWeight:500,fontFamily:"DM Sans,sans-serif",
+                      display:"inline-flex",alignItems:"center",gap:"8px",
+                      background:allFilled?"#0D1B2E":"#E2DDD6",
+                      color:allFilled?"#fff":"#94A3B8",
+                      cursor:allFilled?"pointer":"not-allowed",transition:"all .2s"}}>
+                    {label} <ChevronRight size={16}/>
+                  </button>
+                );
+              })()}
             </div>
           </div>
         </Sec>
@@ -1146,48 +1275,40 @@ export default function App(){
           <div style={{maxWidth:"880px",margin:"0 auto",padding:"44px 24px",
             display:"flex",flexDirection:"column",gap:"24px"}}>
 
-            {/* ── DISC + IKIGAI ── */}
-            <div className="r2" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"20px"}}>
-
-              {/* Jauges DISC animées */}
-              <div style={{background:"#FFFFFF",borderRadius:"16px",padding:"32px",border:"1px solid #E2DDD6"}}>
-                <p style={{fontSize:"9px",letterSpacing:"2.5px",color:"#94A3B8",
-                  textTransform:"uppercase",marginBottom:"28px"}}>Profil DISC</p>
-                <div style={{display:"flex",flexDirection:"column",gap:"20px"}}>
-                  {["D","I","S","C"].map((d,i)=>(
-                    <div key={d}>
-                      <div style={{display:"flex",justifyContent:"space-between",
-                        alignItems:"baseline",marginBottom:"8px"}}>
-                        <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
-                          <span style={{fontSize:"13px",fontWeight:700,color:DM[d].color,
-                            fontFamily:"DM Sans,sans-serif"}}>{d}</span>
-                          <span style={{fontSize:"12px",color:"#64748B"}}>{DM[d].name}</span>
-                        </div>
-                        <span style={{fontSize:"20px",fontWeight:500,color:DM[d].color,
-                          fontFamily:"Playfair Display,serif"}}>{sc[d]}</span>
+            {/* ── DISC — pleine largeur ── */}
+            <div style={{background:"#FFFFFF",borderRadius:"16px",padding:"36px",border:"1px solid #E2DDD6"}}>
+              <p style={{fontSize:"9px",letterSpacing:"2.5px",color:"#94A3B8",
+                textTransform:"uppercase",marginBottom:"28px"}}>Profil DISC</p>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"28px 48px"}}>
+                {["D","I","S","C"].map((d,i)=>(
+                  <div key={d}>
+                    <div style={{display:"flex",justifyContent:"space-between",
+                      alignItems:"baseline",marginBottom:"8px"}}>
+                      <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
+                        <span style={{fontSize:"14px",fontWeight:700,color:DM[d].color}}>{d}</span>
+                        <span style={{fontSize:"13px",color:"#475569",fontWeight:500}}>{DM[d].name}</span>
                       </div>
-                      <div className="disc-gauge-track">
-                        <div className="disc-gauge-fill" style={{
-                          "--target":`${sc[d]}%`,
-                          background:`linear-gradient(90deg,${DM[d].color}99,${DM[d].color})`,
-                          animationDelay:`${0.3 + i*0.2}s`,
-                        }}/>
-                      </div>
-                      <p style={{fontSize:"10px",color:"#94A3B8",marginTop:"4px",
-                        fontFamily:"DM Sans,sans-serif"}}>{DM[d].desc}</p>
+                      <span className="fd" style={{fontSize:"24px",fontWeight:400,color:DM[d].color}}>{sc[d]}</span>
                     </div>
-                  ))}
-                </div>
+                    <div className="disc-gauge-track" style={{height:"12px"}}>
+                      <div className="disc-gauge-fill" style={{
+                        "--target":`${sc[d]}%`,
+                        background:`linear-gradient(90deg,${DM[d].color}88,${DM[d].color})`,
+                        animationDelay:`${0.3+i*0.2}s`,
+                      }}/>
+                    </div>
+                    <p style={{fontSize:"11px",color:"#94A3B8",marginTop:"6px"}}>{DM[d].desc}</p>
+                  </div>
+                ))}
               </div>
+            </div>
 
-              {/* Venn */}
-              <div style={{background:"#FFFFFF",borderRadius:"16px",padding:"32px",
-                border:"1px solid #E2DDD6",display:"flex",flexDirection:"column"}}>
-                <p style={{fontSize:"9px",letterSpacing:"2.5px",color:"#94A3B8",
-                  textTransform:"uppercase",marginBottom:"16px"}}>Carte Ikigai</p>
-                <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center"}}>
-                  <Venn venn={out.venn}/>
-                </div>
+            {/* ── VENN IKIGAI — pleine largeur ── */}
+            <div style={{background:"#FFFFFF",borderRadius:"16px",padding:"36px",border:"1px solid #E2DDD6"}}>
+              <p style={{fontSize:"9px",letterSpacing:"2.5px",color:"#94A3B8",
+                textTransform:"uppercase",marginBottom:"24px"}}>Carte Ikigai Personnalisée</p>
+              <div style={{display:"flex",justifyContent:"center"}}>
+                <Venn venn={out.venn}/>
               </div>
             </div>
 
