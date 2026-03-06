@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer } from "recharts";
 import {
   ChevronRight, ChevronLeft, Download, Sparkles, Heart, Globe, Star,
@@ -99,6 +99,32 @@ textarea:focus, input:focus, select:focus {
   animation: bar .9s cubic-bezier(.16,1,.3,1) both;
 }
 
+/* ── Jauges DISC animées ── */
+@keyframes gauge-fill {
+  from { width: 0% }
+  to   { width: var(--target) }
+}
+.disc-gauge-track {
+  height: 10px; border-radius: 8px;
+  background: var(--cream2); overflow: hidden;
+  position: relative;
+}
+.disc-gauge-fill {
+  height: 100%; border-radius: 8px;
+  width: 0%;
+  animation: gauge-fill 1.2s cubic-bezier(.16,1,.3,1) forwards;
+}
+
+/* ── Mots flottants Ikigai ── */
+@keyframes float-kw {
+  0%,100% { transform: translateY(0px);   opacity: .85; }
+  50%      { transform: translateY(-5px);  opacity: 1;   }
+}
+.kw-float {
+  display: inline-block;
+  animation: float-kw 3.5s ease-in-out infinite;
+}
+
 /* Grilles responsives */
 @media(max-width:700px) {
   .r2 { grid-template-columns: 1fr!important; }
@@ -196,160 +222,158 @@ function calcDisc(ans) {
 ───────────────────────────────────────────── */
 function extractKeywords(text, max=6) {
   if (!text) return [];
-  const raw = text
-    .split(/[,\n;/•·]+/)
-    .map(s => s.trim().replace(/^[-–—*]\s*/, ''))
-    .filter(s => s.length > 2 && s.length < 42);
-  return [...new Set(raw)].slice(0, max);
+  return [...new Set(
+    text.split(/[,
+;/•·]+/)
+      .map(s => s.trim().replace(/^[-–—*]\s*/, ''))
+      .filter(s => s.length > 2 && s.length < 60)
+  )].slice(0, max);
 }
 
-// Extrait les mots-clés d'intersection entre deux textes
-function extractIntersection(text1, text2, max=3) {
-  if (!text1 || !text2) return [];
-  const kw1 = extractKeywords(text1, 12);
-  const kw2 = extractKeywords(text2, 12);
-  // Cherche les termes communs ou proches (premiers mots)
-  const common = kw1.filter(k1 =>
-    kw2.some(k2 =>
-      k2.toLowerCase().includes(k1.toLowerCase().slice(0,5)) ||
-      k1.toLowerCase().includes(k2.toLowerCase().slice(0,5))
-    )
-  );
-  // Si pas assez de communs, prend les premiers de chaque liste
+function intersectKeywords(t1, t2, max=2) {
+  const k1 = extractKeywords(t1, 12), k2 = extractKeywords(t2, 12);
+  const common = k1.filter(a => k2.some(b =>
+    b.toLowerCase().includes(a.toLowerCase().slice(0,5)) ||
+    a.toLowerCase().includes(b.toLowerCase().slice(0,5))
+  ));
   if (common.length < max) {
-    const fill = [...kw1.slice(0,2), ...kw2.slice(0,1)]
-      .filter(k => !common.includes(k));
+    const fill = [...k1.slice(0,2), ...k2.slice(0,1)].filter(k => !common.includes(k));
     return [...common, ...fill].slice(0, max);
   }
   return common.slice(0, max);
 }
 
 /* ─────────────────────────────────────────────
-   VENN IKIGAI DYNAMIQUE
+   VENN IKIGAI — VERSION HTML (écran, animée)
 ───────────────────────────────────────────── */
-function VennList({ x, y, keywords, color, align="middle" }) {
-  return (
-    <g>
-      {keywords.map((kw, i) => {
-        const label = kw.length > 20 ? kw.slice(0, 18) + "…" : kw;
-        return (
-          <text key={i} x={x} y={y + i * 13.5}
-            textAnchor={align} fontSize="9" fill={color}
-            fontFamily="DM Sans, sans-serif" fontWeight="400">
-            {label}
-          </text>
-        );
-      })}
-    </g>
+function Venn({ venn }) {
+  // Mots-clés extraits et synthétisés par l'IA
+  const love     = venn?.love     || [];
+  const good     = venn?.good     || [];
+  const need     = venn?.need     || [];
+  const paid     = venn?.paid     || [];
+  const passion  = venn?.passion  || [];
+  const mission  = venn?.mission  || [];
+  const metier   = venn?.metier   || [];
+  const vocation = venn?.vocation || [];
+
+  const KW = ({ words, color, delay=0 }) => (
+    <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:"3px"}}>
+      {words.map((w,i) => (
+        <span key={i} className="kw-float" style={{
+          fontSize:"10px", color, fontFamily:"DM Sans,sans-serif",
+          fontWeight:500, lineHeight:1.4, textAlign:"center",
+          animationDelay:`${delay + i*0.4}s`,
+          animationDuration:`${3.2 + i*0.3}s`,
+        }}>{w}</span>
+      ))}
+    </div>
   );
-}
 
-function VennIntersect({ x, y, keywords, color }) {
-  return (
-    <g>
-      {keywords.map((kw, i) => {
-        const label = kw.length > 16 ? kw.slice(0, 14) + "…" : kw;
-        return (
-          <text key={i} x={x} y={y + i * 12}
-            textAnchor="middle" fontSize="8.5" fill={color}
-            fontFamily="DM Sans, sans-serif" fontStyle="italic" fontWeight="500">
-            {label}
-          </text>
-        );
-      })}
-    </g>
+  const Inter = ({ words, label, color }) => (
+    <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:"2px"}}>
+      <span style={{fontSize:"8px",color,fontStyle:"italic",fontWeight:600,
+        fontFamily:"DM Sans,sans-serif",opacity:.8}}>{label}</span>
+      {words.map((w,i) => (
+        <span key={i} style={{fontSize:"9px",color,fontFamily:"DM Sans,sans-serif",
+          fontWeight:400,lineHeight:1.3,textAlign:"center",opacity:.75}}>{w}</span>
+      ))}
+    </div>
   );
-}
 
-function Venn({ ikigai }) {
-  const love = extractKeywords(ikigai?.love || "", 5);
-  const good = extractKeywords(ikigai?.good || "", 5);
-  const need = extractKeywords(ikigai?.need || "", 5);
-  const paid = extractKeywords(ikigai?.paid || "", 5);
-
-  // Intersections entre cercles
-  const passion  = extractIntersection(ikigai?.love || "", ikigai?.good || "", 2); // love ∩ good
-  const mission  = extractIntersection(ikigai?.love || "", ikigai?.need || "", 2); // love ∩ need
-  const vocation = extractIntersection(ikigai?.need || "", ikigai?.paid || "", 2); // need ∩ paid
-  const metier   = extractIntersection(ikigai?.good || "", ikigai?.paid || "", 2); // good ∩ paid
+  const C = "#C0586A", B = "#4A7CC0", G = "#3D9E70", O = "#B8862A";
 
   return (
-    <svg viewBox="0 0 600 600"
-      style={{width:"100%", maxWidth:"460px", display:"block", margin:"0 auto"}}>
-      <defs>
-        <radialGradient id="vg1" cx="50%" cy="50%">
-          <stop offset="0%" stopColor="#C0586A" stopOpacity="0.15"/>
-          <stop offset="100%" stopColor="#C0586A" stopOpacity="0.04"/>
-        </radialGradient>
-        <radialGradient id="vg2" cx="50%" cy="50%">
-          <stop offset="0%" stopColor="#4A7CC0" stopOpacity="0.15"/>
-          <stop offset="100%" stopColor="#4A7CC0" stopOpacity="0.04"/>
-        </radialGradient>
-        <radialGradient id="vg3" cx="50%" cy="50%">
-          <stop offset="0%" stopColor="#3D9E70" stopOpacity="0.15"/>
-          <stop offset="100%" stopColor="#3D9E70" stopOpacity="0.04"/>
-        </radialGradient>
-        <radialGradient id="vg4" cx="50%" cy="50%">
-          <stop offset="0%" stopColor="#B8862A" stopOpacity="0.15"/>
-          <stop offset="100%" stopColor="#B8862A" stopOpacity="0.04"/>
-        </radialGradient>
-      </defs>
+    <div style={{position:"relative",width:"100%",maxWidth:"420px",
+      margin:"0 auto",aspectRatio:"1/1",userSelect:"none"}}>
 
       {/* ── 4 CERCLES ── */}
-      <circle cx="222" cy="222" r="155" fill="url(#vg1)" stroke="#C0586A" strokeWidth="1.5"/>
-      <circle cx="378" cy="222" r="155" fill="url(#vg2)" stroke="#4A7CC0" strokeWidth="1.5"/>
-      <circle cx="222" cy="378" r="155" fill="url(#vg3)" stroke="#3D9E70" strokeWidth="1.5"/>
-      <circle cx="378" cy="378" r="155" fill="url(#vg4)" stroke="#B8862A" strokeWidth="1.5"/>
+      {[
+        {left:"4%", top:"4%",   bg:C+"22", border:`1.5px solid ${C}55`},
+        {left:"46%",top:"4%",   bg:B+"22", border:`1.5px solid ${B}55`},
+        {left:"4%", top:"46%",  bg:G+"22", border:`1.5px solid ${G}55`},
+        {left:"46%",top:"46%",  bg:O+"22", border:`1.5px solid ${O}55`},
+      ].map((s,i) => (
+        <div key={i} style={{
+          position:"absolute", width:"56%", height:"56%",
+          borderRadius:"50%", background:s.bg, border:s.border,
+          left:s.left, top:s.top,
+        }}/>
+      ))}
 
-      {/* ── CENTRE IKIGAI ── */}
-      <circle cx="300" cy="300" r="42" fill="#C9A96E18" stroke="#C9A96E" strokeWidth="2"/>
-      <text x="300" y="296" textAnchor="middle" fontSize="12"
-        fill="#8B6A30" fontFamily="Playfair Display,serif" fontWeight="600">IKIGAI</text>
-      <text x="300" y="310" textAnchor="middle" fontSize="8"
-        fill="#A07840" fontFamily="DM Sans,sans-serif">Raison d'être</text>
+      {/* ── TITRES ── */}
+      <div style={{position:"absolute",top:"1%",left:"3%",
+        fontSize:"10px",fontWeight:700,color:C,fontFamily:"DM Sans,sans-serif"}}>
+        Ce que j'aime
+      </div>
+      <div style={{position:"absolute",top:"1%",right:"2%",
+        fontSize:"10px",fontWeight:700,color:B,fontFamily:"DM Sans,sans-serif",textAlign:"right"}}>
+        En quoi je suis doué
+      </div>
+      <div style={{position:"absolute",bottom:"1%",left:"3%",
+        fontSize:"10px",fontWeight:700,color:G,fontFamily:"DM Sans,sans-serif"}}>
+        Ce dont le monde a besoin
+      </div>
+      <div style={{position:"absolute",bottom:"1%",right:"2%",
+        fontSize:"10px",fontWeight:700,color:O,fontFamily:"DM Sans,sans-serif",textAlign:"right"}}>
+        Ce qui peut me faire vivre
+      </div>
 
-      {/* ── TITRES CERCLES ── */}
-      <text x="150" y="62" textAnchor="middle" fontSize="13" fill="#C0586A"
-        fontFamily="DM Sans,sans-serif" fontWeight="700">Ce que j'aime</text>
-      <text x="450" y="62" textAnchor="middle" fontSize="13" fill="#4A7CC0"
-        fontFamily="DM Sans,sans-serif" fontWeight="700">En quoi je suis doué</text>
-      <text x="150" y="556" textAnchor="middle" fontSize="13" fill="#3D9E70"
-        fontFamily="DM Sans,sans-serif" fontWeight="700">Ce dont le monde a besoin</text>
-      <text x="450" y="556" textAnchor="middle" fontSize="13" fill="#B8862A"
-        fontFamily="DM Sans,sans-serif" fontWeight="700">Ce qui peut me faire vivre</text>
-
-      {/* ── MOTS-CLÉS DANS ZONES EXCLUSIVES ── */}
-      <VennList x={148} y={love.length>0 ? 110 - (love.length*6.5) : 110}
-        keywords={love} color="#B04060"/>
-      <VennList x={452} y={good.length>0 ? 110 - (good.length*6.5) : 110}
-        keywords={good} color="#3A6CB0"/>
-      <VennList x={148} y={need.length>0 ? 400 - (need.length*6.5) : 400}
-        keywords={need} color="#2D8E60"/>
-      <VennList x={452} y={paid.length>0 ? 400 - (paid.length*6.5) : 400}
-        keywords={paid} color="#A87620"/>
+      {/* ── MOTS-CLÉS CERCLES (zones exclusives) ── */}
+      <div style={{position:"absolute",top:"14%",left:"7%",width:"24%"}}>
+        <KW words={love} color={C} delay={0}/>
+      </div>
+      <div style={{position:"absolute",top:"14%",right:"7%",width:"24%"}}>
+        <KW words={good} color={B} delay={0.6}/>
+      </div>
+      <div style={{position:"absolute",bottom:"14%",left:"7%",width:"24%"}}>
+        <KW words={need} color={G} delay={1.2}/>
+      </div>
+      <div style={{position:"absolute",bottom:"14%",right:"7%",width:"24%"}}>
+        <KW words={paid} color={O} delay={1.8}/>
+      </div>
 
       {/* ── INTERSECTIONS ── */}
-      {/* Passion : love ∩ good — haut centre */}
-      <text x="300" y="148" textAnchor="middle" fontSize="9" fill="#7B4060"
-        fontFamily="DM Sans,sans-serif" fontStyle="italic" fontWeight="600">Passion</text>
-      <VennIntersect x={300} y={162} keywords={passion} color="#8B5070"/>
+      {/* Passion : haut centre */}
+      <div style={{position:"absolute",top:"16%",left:"50%",
+        transform:"translateX(-50%)",width:"18%",textAlign:"center"}}>
+        <Inter words={passion} label="Passion" color="#9B5070"/>
+      </div>
+      {/* Mission : centre gauche */}
+      <div style={{position:"absolute",top:"50%",left:"16%",
+        transform:"translateY(-50%)",width:"18%",textAlign:"center"}}>
+        <Inter words={mission} label="Mission" color="#488070"/>
+      </div>
+      {/* Métier : centre droit */}
+      <div style={{position:"absolute",top:"50%",right:"16%",
+        transform:"translateY(-50%)",width:"18%",textAlign:"center"}}>
+        <Inter words={metier} label="Métier" color="#507090"/>
+      </div>
+      {/* Vocation : bas centre */}
+      <div style={{position:"absolute",bottom:"16%",left:"50%",
+        transform:"translateX(-50%)",width:"18%",textAlign:"center"}}>
+        <Inter words={vocation} label="Vocation" color="#8A7830"/>
+      </div>
 
-      {/* Mission : love ∩ need — gauche centre */}
-      <text x="180" y="305" textAnchor="middle" fontSize="9" fill="#487060"
-        fontFamily="DM Sans,sans-serif" fontStyle="italic" fontWeight="600">Mission</text>
-      <VennIntersect x={180} y={319} keywords={mission} color="#508070"/>
-
-      {/* Métier : good ∩ paid — droite centre */}
-      <text x="420" y="305" textAnchor="middle" fontSize="9" fill="#506890"
-        fontFamily="DM Sans,sans-serif" fontStyle="italic" fontWeight="600">Métier</text>
-      <VennIntersect x={420} y={319} keywords={metier} color="#607090"/>
-
-      {/* Vocation : need ∩ paid — bas centre */}
-      <text x="300" y="452" textAnchor="middle" fontSize="9" fill="#7A6820"
-        fontFamily="DM Sans,sans-serif" fontStyle="italic" fontWeight="600">Vocation</text>
-      <VennIntersect x={300} y={466} keywords={vocation} color="#8A7830"/>
-
-    </svg>
+      {/* ── CENTRE IKIGAI ── */}
+      <div style={{
+        position:"absolute",top:"50%",left:"50%",
+        transform:"translate(-50%,-50%)",
+        width:"17%",height:"17%",borderRadius:"50%",
+        background:"rgba(201,169,110,.15)",
+        border:"2px solid #C9A96E",
+        display:"flex",flexDirection:"column",
+        alignItems:"center",justifyContent:"center",
+        textAlign:"center",zIndex:10,
+      }}>
+        <span style={{fontSize:"9px",fontWeight:600,color:"#8B6A30",
+          fontFamily:"Playfair Display,serif",lineHeight:1}}>IKIGAI</span>
+        <span style={{fontSize:"6px",color:"#A07840",
+          fontFamily:"DM Sans,sans-serif",lineHeight:1.2,marginTop:"2px"}}>
+          Raison d'être
+        </span>
+      </div>
+    </div>
   );
 }
 
@@ -462,44 +486,24 @@ export default function App(){
     setCtx({promo:"",level:"",question:""});setSc(null);setOut(null);
   };
 
-  /* ── GÉNÉRATION SVG VENN POUR EXPORT ── */
-  const generateVennSVG = (ikigaiData) => {
-    const extract = (text, max=5) => {
-      if (!text) return [];
-      return [...new Set(
-        text.split(/[,\n;/•·]+/)
-          .map(s => s.trim().replace(/^[-–—*]\s*/, ''))
-          .filter(s => s.length > 2 && s.length < 42)
-      )].slice(0, max);
-    };
-    const intersect = (t1, t2, max=2) => {
-      const k1 = extract(t1, 10), k2 = extract(t2, 10);
-      const common = k1.filter(a => k2.some(b =>
-        b.toLowerCase().includes(a.toLowerCase().slice(0,5)) ||
-        a.toLowerCase().includes(b.toLowerCase().slice(0,5))
-      ));
-      if (common.length < max) {
-        const fill = [...k1.slice(0,2),...k2.slice(0,1)].filter(k=>!common.includes(k));
-        return [...common,...fill].slice(0,max);
-      }
-      return common.slice(0,max);
-    };
-    const trunc = (s, n=20) => s.length > n ? s.slice(0,n-1)+"…" : s;
-    const listRows = (kws, x, y, color) => kws.map((k,i) =>
+  /* ── GÉNÉRATION SVG VENN POUR EXPORT (utilise mots-clés IA) ── */
+  const generateVennSVG = (vennData) => {
+    const trunc = (s, n=20) => s && s.length > n ? s.slice(0,n-1)+"…" : (s||"");
+    const listRows = (kws, x, y, color) => (kws||[]).map((k,i) =>
       `<text x="${x}" y="${y + i*13}" text-anchor="middle" font-size="9" fill="${color}" font-family="DM Sans,sans-serif">${trunc(k)}</text>`
     ).join("");
-    const interRows = (kws, x, y, color) => kws.map((k,i) =>
+    const interRows = (kws, x, y, color) => (kws||[]).map((k,i) =>
       `<text x="${x}" y="${y + i*12}" text-anchor="middle" font-size="8" fill="${color}" font-family="DM Sans,sans-serif" font-style="italic">${trunc(k,16)}</text>`
     ).join("");
 
-    const love = extract(ikigaiData?.love||"", 5);
-    const good = extract(ikigaiData?.good||"", 5);
-    const need = extract(ikigaiData?.need||"", 5);
-    const paid = extract(ikigaiData?.paid||"", 5);
-    const passion  = intersect(ikigaiData?.love||"", ikigaiData?.good||"", 2);
-    const mission  = intersect(ikigaiData?.love||"", ikigaiData?.need||"", 2);
-    const metier   = intersect(ikigaiData?.good||"", ikigaiData?.paid||"", 2);
-    const vocation = intersect(ikigaiData?.need||"", ikigaiData?.paid||"", 2);
+    const love     = vennData?.love     || [];
+    const good     = vennData?.good     || [];
+    const need     = vennData?.need     || [];
+    const paid     = vennData?.paid     || [];
+    const passion  = vennData?.passion  || [];
+    const mission  = vennData?.mission  || [];
+    const metier   = vennData?.metier   || [];
+    const vocation = vennData?.vocation || [];
 
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" style="width:100%;max-width:500px;display:block;margin:0 auto">
       <defs>
@@ -639,7 +643,7 @@ export default function App(){
     <h2>Ta Raison d'Être</h2>
     <p style="margin-bottom:24px">${(out.ikigaiCore||"").replace(/</g,"&lt;")}</p>
     <div style="text-align:center;margin:28px 0">
-      ${generateVennSVG(ik)}
+      ${generateVennSVG(out.venn)}
     </div>
   </div>
 
@@ -1149,31 +1153,32 @@ export default function App(){
             {/* ── DISC + IKIGAI ── */}
             <div className="r2" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"20px"}}>
 
-              {/* Radar */}
+              {/* Jauges DISC animées */}
               <div style={{background:"#FFFFFF",borderRadius:"16px",padding:"32px",border:"1px solid #E2DDD6"}}>
                 <p style={{fontSize:"9px",letterSpacing:"2.5px",color:"#94A3B8",
-                  textTransform:"uppercase",marginBottom:"24px"}}>Profil DISC</p>
-                <div style={{height:"200px"}}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <RadarChart data={radar} margin={{top:8,right:8,bottom:8,left:8}}>
-                      <PolarGrid stroke="#F0EDE6"/>
-                      <PolarAngleAxis dataKey="dim"
-                        tick={{fill:"#64748B",fontSize:13,fontFamily:"DM Sans,sans-serif",fontWeight:600}}/>
-                      <Radar dataKey="val" stroke="#C9A96E" fill="#C9A96E" fillOpacity={0.15} strokeWidth={2}/>
-                    </RadarChart>
-                  </ResponsiveContainer>
-                </div>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"7px",marginTop:"16px"}}>
-                  {["D","I","S","C"].map(d=>(
-                    <div key={d} style={{padding:"9px 12px",borderRadius:"8px",background:DM[d].bg,
-                      display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                      <div>
-                        <span style={{fontSize:"11px",fontWeight:700,color:DM[d].color}}>{d}</span>
-                        <span style={{fontSize:"10px",color:"#64748B",marginLeft:"6px"}}>{DM[d].name}</span>
+                  textTransform:"uppercase",marginBottom:"28px"}}>Profil DISC</p>
+                <div style={{display:"flex",flexDirection:"column",gap:"20px"}}>
+                  {["D","I","S","C"].map((d,i)=>(
+                    <div key={d}>
+                      <div style={{display:"flex",justifyContent:"space-between",
+                        alignItems:"baseline",marginBottom:"8px"}}>
+                        <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
+                          <span style={{fontSize:"13px",fontWeight:700,color:DM[d].color,
+                            fontFamily:"DM Sans,sans-serif"}}>{d}</span>
+                          <span style={{fontSize:"12px",color:"#64748B"}}>{DM[d].name}</span>
+                        </div>
+                        <span style={{fontSize:"20px",fontWeight:500,color:DM[d].color,
+                          fontFamily:"Playfair Display,serif"}}>{sc[d]}</span>
                       </div>
-                      <span className="fd" style={{fontSize:"18px",fontWeight:500,color:DM[d].color}}>
-                        {sc[d]}
-                      </span>
+                      <div className="disc-gauge-track">
+                        <div className="disc-gauge-fill" style={{
+                          "--target":`${sc[d]}%`,
+                          background:`linear-gradient(90deg,${DM[d].color}99,${DM[d].color})`,
+                          animationDelay:`${0.3 + i*0.2}s`,
+                        }}/>
+                      </div>
+                      <p style={{fontSize:"10px",color:"#94A3B8",marginTop:"4px",
+                        fontFamily:"DM Sans,sans-serif"}}>{DM[d].desc}</p>
                     </div>
                   ))}
                 </div>
@@ -1185,7 +1190,7 @@ export default function App(){
                 <p style={{fontSize:"9px",letterSpacing:"2.5px",color:"#94A3B8",
                   textTransform:"uppercase",marginBottom:"16px"}}>Carte Ikigai</p>
                 <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center"}}>
-                  <Venn ikigai={ik}/>
+                  <Venn venn={out.venn}/>
                 </div>
               </div>
             </div>
