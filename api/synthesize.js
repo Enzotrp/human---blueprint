@@ -74,7 +74,13 @@ AUTRES REGLES :
 - Exactement 4 aiStrategies
 - Exactement 3 actions, cat parmi : Competence, Reseau, Projet
 - when parmi : Cette semaine, Ce mois, Dans 3 mois
-- JSON pur uniquement, aucun texte hors JSON`;
+- JSON pur uniquement, aucun texte hors JSON
+
+REGLES POUR LA NUANCE ET L AUTHENTICITE :
+- Dans "behavioral" : identifie AU MOINS UNE tension ou contradiction interne. Ex : profil D eleve + valeurs d empathie = risque de brutalite non intentionnelle. Profil I + besoin de sens = risque de dispersion. Nomme-la clairement, sans jugement.
+- Dans "ikigaiCore" : souleve une zone de flou ou de tension dans l ikigai. Ex : passion pour X mais viabilite economique floue. Ou : fort besoin d impact mais peur de s exposer. Pose une vraie question ouverte a la fin.
+- Dans "humanEdge" : sois specifique et ancre dans CE profil — pas de formulation generique. Donne un exemple concret de situation ou cet humain sera irreplacable la ou l IA echoue.
+- Evite absolument les formulations "vous etes quelqu un qui..." generiques. Chaque phrase doit etre impossible a coller sur un profil different.`;
 
     const anthropicRes = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
