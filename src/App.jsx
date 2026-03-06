@@ -114,15 +114,7 @@ textarea:focus, input:focus, select:focus {
   animation: gauge-fill 1.2s cubic-bezier(.16,1,.3,1) forwards;
 }
 
-/* ── Mots flottants Ikigai ── */
-@keyframes float-kw {
-  0%,100% { transform: translateY(0px);   opacity: .85; }
-  50%      { transform: translateY(-5px);  opacity: 1;   }
-}
-.kw-float {
-  display: inline-block;
-  animation: float-kw 3.5s ease-in-out infinite;
-}
+
 
 /* Grilles responsives */
 @media(max-width:700px) {
@@ -137,7 +129,7 @@ textarea:focus, input:focus, select:focus {
 `;
 
 /* ─────────────────────────────────────────────
-   DONNÉES DISC — 20 questions choix forcé
+   DONNÉES DISC — 28 questions choix forcé
 ───────────────────────────────────────────── */
 const QS = [
   { id:1,  w:[{t:"Audacieux",d:"D"},{t:"Expressif",d:"I"},{t:"Chaleureux",d:"S"},{t:"Minutieux",d:"C"}]},
@@ -145,21 +137,29 @@ const QS = [
   { id:3,  w:[{t:"Affirmé",d:"D"},{t:"Persuasif",d:"I"},{t:"Doux",d:"S"},{t:"Prudent",d:"C"}]},
   { id:4,  w:[{t:"Compétitif",d:"D"},{t:"Enthousiaste",d:"I"},{t:"Fiable",d:"S"},{t:"Organisé",d:"C"}]},
   { id:5,  w:[{t:"Direct",d:"D"},{t:"Ouvert",d:"I"},{t:"Harmonieux",d:"S"},{t:"Analytique",d:"C"}]},
-  { id:6,  w:[{t:"Courageux",d:"D"},{t:"Spontané",d:"I"},{t:"Constant",d:"S"},{t:"Honnête",d:"C"}]},
+  { id:6,  w:[{t:"Résolu",d:"D"},{t:"Spontané",d:"I"},{t:"Constant",d:"S"},{t:"Honnête",d:"C"}]},
   { id:7,  w:[{t:"Exigeant",d:"D"},{t:"Inspirant",d:"I"},{t:"Serein",d:"S"},{t:"Logique",d:"C"}]},
   { id:8,  w:[{t:"Pionnier",d:"D"},{t:"Entraînant",d:"I"},{t:"Stable",d:"S"},{t:"Structuré",d:"C"}]},
   { id:9,  w:[{t:"Indépendant",d:"D"},{t:"Engageant",d:"I"},{t:"Coopératif",d:"S"},{t:"Attentif",d:"C"}]},
   { id:10, w:[{t:"Déterminé",d:"D"},{t:"Pétillant",d:"I"},{t:"Loyal",d:"S"},{t:"Discipliné",d:"C"}]},
-  { id:11, w:[{t:"Aventureux",d:"D"},{t:"Communicatif",d:"I"},{t:"Modeste",d:"S"},{t:"Appliqué",d:"C"}]},
+  { id:11, w:[{t:"Aventureux",d:"D"},{t:"Communicatif",d:"I"},{t:"Modeste",d:"S"},{t:"Objectif",d:"C"}]},
   { id:12, w:[{t:"Énergique",d:"D"},{t:"Magnétique",d:"I"},{t:"Tolérant",d:"S"},{t:"Complet",d:"C"}]},
-  { id:13, w:[{t:"Autonome",d:"D"},{t:"Expressif",d:"I"},{t:"Sincère",d:"S"},{t:"Précis",d:"C"}]},
+  { id:13, w:[{t:"Autonome",d:"D"},{t:"Animé",d:"I"},{t:"Sincère",d:"S"},{t:"Précis",d:"C"}]},
   { id:14, w:[{t:"Ambitieux",d:"D"},{t:"Enjoué",d:"I"},{t:"Équilibré",d:"S"},{t:"Réfléchi",d:"C"}]},
   { id:15, w:[{t:"Franc",d:"D"},{t:"Jovial",d:"I"},{t:"Décontracté",d:"S"},{t:"Méthodique",d:"C"}]},
   { id:16, w:[{t:"Courageux",d:"D"},{t:"Optimiste",d:"I"},{t:"Bienveillant",d:"S"},{t:"Perfectionniste",d:"C"}]},
   { id:17, w:[{t:"Orienté résultats",d:"D"},{t:"Dynamique",d:"I"},{t:"Protecteur",d:"S"},{t:"Ordonné",d:"C"}]},
   { id:18, w:[{t:"Téméraire",d:"D"},{t:"Convaincant",d:"I"},{t:"Empathique",d:"S"},{t:"Rationnel",d:"C"}]},
-  { id:19, w:[{t:"Actif",d:"D"},{t:"Positif",d:"I"},{t:"Prévisible",d:"S"},{t:"Précis",d:"C"}]},
+  { id:19, w:[{t:"Actif",d:"D"},{t:"Positif",d:"I"},{t:"Prévisible",d:"S"},{t:"Exact",d:"C"}]},
   { id:20, w:[{t:"Autoritaire",d:"D"},{t:"Rayonnant",d:"I"},{t:"Accommodant",d:"S"},{t:"Consciencieux",d:"C"}]},
+  { id:21, w:[{t:"Ferme",d:"D"},{t:"Généreux",d:"I"},{t:"Paisible",d:"S"},{t:"Scrupuleux",d:"C"}]},
+  { id:22, w:[{t:"Décisif",d:"D"},{t:"Vibrant",d:"I"},{t:"Solidaire",d:"S"},{t:"Mesuré",d:"C"}]},
+  { id:23, w:[{t:"Volontaire",d:"D"},{t:"Créatif",d:"I"},{t:"Attentionné",d:"S"},{t:"Rigoureux",d:"C"}]},
+  { id:24, w:[{t:"Tenace",d:"D"},{t:"Curieux",d:"I"},{t:"Prévenant",d:"S"},{t:"Systématique",d:"C"}]},
+  { id:25, w:[{t:"Assertif",d:"D"},{t:"Stimulant",d:"I"},{t:"Rassurant",d:"S"},{t:"Factuel",d:"C"}]},
+  { id:26, w:[{t:"Persévérant",d:"D"},{t:"Expansif",d:"I"},{t:"Conciliant",d:"S"},{t:"Précautionneux",d:"C"}]},
+  { id:27, w:[{t:"Proactif",d:"D"},{t:"Inspiré",d:"I"},{t:"Disponible",d:"S"},{t:"Sensé",d:"C"}]},
+  { id:28, w:[{t:"Incisif",d:"D"},{t:"Vivace",d:"I"},{t:"Calme",d:"S"},{t:"Pointilleux",d:"C"}]},
 ];
 
 // Chaque pilier Ikigai = 2 micro-questions combinées en une réponse
@@ -248,7 +248,8 @@ function calcDisc(ans) {
   ans.forEach(a=>{ m[a.md]++; l[a.ld]++; });
   const s={};
   ["D","I","S","C"].forEach(d=>{
-    s[d]=Math.max(0,Math.min(100,Math.round(((m[d]-l[d]+20)/40)*100)));
+    // 28 questions : plage -28 à +28, soit 56 points au total
+    s[d]=Math.max(0,Math.min(100,Math.round(((m[d]-l[d]+28)/56)*100)));
   });
   return s;
 }
@@ -292,14 +293,12 @@ function Venn({ venn }) {
   const metier   = venn?.metier   || [];
   const vocation = venn?.vocation || [];
 
-  const KW = ({ words, color, delay=0 }) => (
+  const KW = ({ words, color }) => (
     <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:"3px"}}>
       {words.map((w,i) => (
-        <span key={i} className="kw-float" style={{
+        <span key={i} style={{
           fontSize:"10px", color, fontFamily:"DM Sans,sans-serif",
           fontWeight:500, lineHeight:1.4, textAlign:"center",
-          animationDelay:`${delay + i*0.4}s`,
-          animationDuration:`${3.2 + i*0.3}s`,
         }}>{w}</span>
       ))}
     </div>
@@ -356,16 +355,16 @@ function Venn({ venn }) {
 
       {/* ── MOTS-CLÉS CERCLES (zones exclusives) ── */}
       <div style={{position:"absolute",top:"14%",left:"7%",width:"24%"}}>
-        <KW words={love} color={C} delay={0}/>
+        <KW words={love} color={C}/>
       </div>
       <div style={{position:"absolute",top:"14%",right:"7%",width:"24%"}}>
-        <KW words={good} color={B} delay={0.6}/>
+        <KW words={good} color={B}/>
       </div>
       <div style={{position:"absolute",bottom:"14%",left:"7%",width:"24%"}}>
-        <KW words={need} color={G} delay={1.2}/>
+        <KW words={need} color={G}/>
       </div>
       <div style={{position:"absolute",bottom:"14%",right:"7%",width:"24%"}}>
-        <KW words={paid} color={O} delay={1.8}/>
+        <KW words={paid} color={O}/>
       </div>
 
       {/* ── INTERSECTIONS ── */}
@@ -418,7 +417,7 @@ function Venn({ venn }) {
 function prog(ph,qi,is){
   if(ph==="home")        return 0;
   if(ph==="disc-in")     return 3;
-  if(ph==="disc")        return 3+(qi/20)*34;
+  if(ph==="disc")        return 3+(qi/28)*34;
   if(ph==="ik-in")       return 38;
   if(ph==="ik")          return 38+((is+1)/4)*27;
   if(ph==="ctx")         return 68;
@@ -476,7 +475,7 @@ export default function App(){
   const [is,  setIs]  = useState(0);   // index pilier ikigai (0-3)
   const [iss, setIss] = useState(0);   // index sous-question (0-1)
   const [ik,  setIk]  = useState({love:["",""],good:["",""],need:["",""],paid:["",""]});
-  const [ctx, setCtx] = useState({promo:"",level:"",question:""});
+  const [ctx, setCtx] = useState({promo:"",level:"",exp:"",diplomas:"",question:""});
   const [sc,  setSc]  = useState(null);
   const [out, setOut] = useState(null);
   const [err, setErr] = useState(null);
@@ -492,7 +491,7 @@ export default function App(){
   const discNext = () => {
     const na=[...ans,cur];
     setAns(na); setCur({md:null,ld:null});
-    if(qi<19) setQi(qi+1);
+    if(qi<27) setQi(qi+1);
     else { setSc(calcDisc(na)); setPh("ik-in"); }
   };
   const discBack = () => {
@@ -532,11 +531,17 @@ export default function App(){
           good: ik.good.filter(Boolean).join(' / '),
           need: ik.need.filter(Boolean).join(' / '),
           paid: ik.paid.filter(Boolean).join(' / '),
-        }, ctx); };
+        }, {
+          promo:    ctx.promo,
+          level:    ctx.level,
+          exp:      ctx.exp,
+          diplomas: ctx.diplomas,
+          question: ctx.question,
+        }); };
   const reset=()=>{
     setPh("home");setQi(0);setAns([]);setCur({md:null,ld:null});
     setIs(0);setIss(0);setIk({love:["",""],good:["",""],need:["",""],paid:["",""]});
-    setCtx({promo:"",level:"",question:""});setSc(null);setOut(null);
+    setCtx({promo:"",level:"",exp:"",diplomas:"",question:""});setSc(null);setOut(null);
   };
 
   /* ── GÉNÉRATION SVG VENN POUR EXPORT (utilise mots-clés IA) ── */
@@ -802,7 +807,7 @@ export default function App(){
             <div className="au d3" style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",
               gap:"12px",marginBottom:"48px",maxWidth:"580px",margin:"0 auto 48px"}}>
               {[
-                {Icon:Brain,  label:"Test DISC",         desc:"20 questions · choix forcé"},
+                {Icon:Brain,  label:"Test DISC",         desc:"28 questions · choix forcé"},
                 {Icon:Heart,  label:"Exploration Ikigai", desc:"4 piliers · réflexion guidée"},
                 {Icon:Shield, label:"Atout Humain",       desc:"Ton bouclier face à l'IA"},
               ].map(({Icon,label,desc},i)=>(
@@ -934,7 +939,7 @@ export default function App(){
                 background:cur.md&&cur.ld?"#0D1B2E":"#E2DDD6",
                 color:cur.md&&cur.ld?"#fff":"#94A3B8",
                 cursor:cur.md&&cur.ld?"pointer":"not-allowed",transition:"all .2s"}}>
-                {qi===19?"Terminer le module":"Suivant"} <ChevronRight size={16}/>
+                {qi===27?"Terminer le module":"Suivant"} <ChevronRight size={16}/>
               </button>
             </div>
           </div>
@@ -1137,7 +1142,7 @@ export default function App(){
                   label:"Spécialité / Programme",
                   el:<input value={ctx.promo}
                     onChange={e=>setCtx(v=>({...v,promo:e.target.value}))}
-                    placeholder="ex. : Marketing, Finance, RH, Management, Bachelor…"
+                    placeholder="ex. : Marketing, Finance, RH, Management…"
                     style={{width:"100%",padding:"13px 16px",border:"1.5px solid #E2DDD6",
                       borderRadius:"9px",fontSize:"14px",color:"#0D1B2E",background:"#FFFFFF"}}
                     onFocus={e=>e.target.style.borderColor="#0D1B2E"}
@@ -1160,7 +1165,36 @@ export default function App(){
                     <option>Master / MSc 2ème année (Bac+5)</option>
                     <option>MBA / Programme Grande École</option>
                     <option>Alternance / Apprentissage</option>
+                    <option>Reconversion professionnelle</option>
+                    <option>Autre parcours</option>
                   </select>
+                },
+                {
+                  label:"Expérience professionnelle",
+                  el:<select value={ctx.exp}
+                    onChange={e=>setCtx(v=>({...v,exp:e.target.value}))}
+                    style={{width:"100%",padding:"13px 16px",border:"1.5px solid #E2DDD6",
+                      borderRadius:"9px",fontSize:"14px",background:"#FFFFFF",
+                      color:ctx.exp?"#0D1B2E":"#94A3B8",appearance:"none"}}
+                    onFocus={e=>e.target.style.borderColor="#0D1B2E"}
+                    onBlur={e=>e.target.style.borderColor="#E2DDD6"}>
+                    <option value="">Ton niveau d'expérience pro…</option>
+                    <option>Aucune expérience (stages uniquement)</option>
+                    <option>1 à 3 ans</option>
+                    <option>3 à 7 ans</option>
+                    <option>7 ans et plus</option>
+                    <option>En reconversion (ancienne carrière)</option>
+                  </select>
+                },
+                {
+                  label:"Diplômes et formations obtenus (optionnel)",
+                  el:<input value={ctx.diplomas}
+                    onChange={e=>setCtx(v=>({...v,diplomas:e.target.value}))}
+                    placeholder="ex. : Licence LEA, BTS Commerce, Master Finance…"
+                    style={{width:"100%",padding:"13px 16px",border:"1.5px solid #E2DDD6",
+                      borderRadius:"9px",fontSize:"14px",color:"#0D1B2E",background:"#FFFFFF"}}
+                    onFocus={e=>e.target.style.borderColor="#0D1B2E"}
+                    onBlur={e=>e.target.style.borderColor="#E2DDD6"}/>
                 },
                 {
                   label:"Quelle question cherches-tu à clarifier ?",
@@ -1303,12 +1337,24 @@ export default function App(){
               </div>
             </div>
 
-            {/* ── VENN IKIGAI — pleine largeur ── */}
+            {/* ── VENN IKIGAI — pleine largeur, zoomable mobile ── */}
             <div style={{background:"#FFFFFF",borderRadius:"16px",padding:"36px",border:"1px solid #E2DDD6"}}>
-              <p style={{fontSize:"9px",letterSpacing:"2.5px",color:"#94A3B8",
-                textTransform:"uppercase",marginBottom:"24px"}}>Carte Ikigai Personnalisée</p>
-              <div style={{display:"flex",justifyContent:"center"}}>
-                <Venn venn={out.venn}/>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"24px"}}>
+                <p style={{fontSize:"9px",letterSpacing:"2.5px",color:"#94A3B8",textTransform:"uppercase"}}>
+                  Carte Ikigai Personnalisée
+                </p>
+                <p style={{fontSize:"10px",color:"#C4B8A8",fontStyle:"italic"}}>
+                  📱 Pince pour zoomer
+                </p>
+              </div>
+              <div style={{
+                overflow:"auto", WebkitOverflowScrolling:"touch",
+                touchAction:"pinch-zoom", cursor:"zoom-in",
+                maxHeight:"520px",
+              }}>
+                <div style={{minWidth:"340px"}}>
+                  <Venn venn={out.venn}/>
+                </div>
               </div>
             </div>
 
