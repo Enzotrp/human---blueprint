@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from "react";
-import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer } from "recharts";
 import {
   ChevronRight, ChevronLeft, Download, Sparkles, Heart, Globe, Star,
   Briefcase, Brain, Zap, Eye, RefreshCw, Shield, Target, ArrowRight,
@@ -223,8 +222,7 @@ function calcDisc(ans) {
 function extractKeywords(text, max=6) {
   if (!text) return [];
   return [...new Set(
-    text.split(/[,
-;/•·]+/)
+    text.split(/[,\n;/•·]+/)
       .map(s => s.trim().replace(/^[-–—*]\s*/, ''))
       .filter(s => s.length > 2 && s.length < 60)
   )].slice(0, max);
@@ -697,8 +695,6 @@ export default function App(){
 
 
 
-  /* ── RADAR DATA ── */
-  const radar=sc?["D","I","S","C"].map(d=>({dim:d,val:sc[d],full:100})):[];
 
   /* ══════════════════════════════════════════════════
      RENDU
