@@ -293,90 +293,111 @@ function Venn({ venn }) {
   const vocation = venn?.vocation || [];
 
   const C = "#C0586A", B = "#4A7CC0", G = "#3D9E70", O = "#B8862A";
+  const MIN_SCALE = 0.7, MAX_SCALE = 3.5;
+  const SZ = 440;
 
-  // ── Pan / Zoom state ──
-  const [tf, setTf] = useState({ x:0, y:0, scale:1 });
-  const drag   = useRef(null);
-  const pinch  = useRef(null);
+  // ── Tout l'état de transform dans un seul ref (pas de state) ──
+  // On force le re-render manuellement via un compteur
+  const [, forceRender] = useState(0);
+  const tf    = useRef({ x:0, y:0, scale:1 });
+  const drag  = useRef(null);
+  const pinch = useRef(null);
   const boxRef = useRef(null);
+  const isInteracting = useRef(false);
 
   const clamp = (val, mn, mx) => Math.min(mx, Math.max(mn, val));
-  const MIN_SCALE = 0.7, MAX_SCALE = 3.5;
 
-  // ── MOUSE events ──
-  const onMouseDown = e => {
-    e.preventDefault();
-    drag.current = { sx: e.clientX - tf.x, sy: e.clientY - tf.y };
+  const applyTf = (next) => {
+    tf.current = next;
+    forceRender(n => n + 1);
   };
-  const onMouseMove = e => {
-    if (!drag.current) return;
-    setTf(t => ({ ...t, x: e.clientX - drag.current.sx, y: e.clientY - drag.current.sy }));
-  };
-  const onMouseUp = () => { drag.current = null; };
 
-  // ── WHEEL zoom ──
-  const onWheel = e => {
+  // ── Handlers stables — définis une seule fois via useRef ──
+  const handlers = useRef({});
+  handlers.current.onWheel = (e) => {
     e.preventDefault();
     const factor = e.deltaY < 0 ? 1.12 : 0.9;
-    setTf(t => ({ ...t, scale: clamp(t.scale * factor, MIN_SCALE, MAX_SCALE) }));
+    applyTf({ ...tf.current, scale: clamp(tf.current.scale * factor, MIN_SCALE, MAX_SCALE) });
   };
-
-  // ── TOUCH events ──
-  const getDistAndMid = touches => {
-    const [a, b] = [touches[0], touches[1]];
-    const dx = a.clientX - b.clientX, dy = a.clientY - b.clientY;
-    return {
-      dist: Math.hypot(dx, dy),
-      mx: (a.clientX + b.clientX) / 2,
-      my: (a.clientY + b.clientY) / 2,
-    };
-  };
-
-  const onTouchStart = e => {
-    if (e.touches.length === 1) {
-      drag.current = { sx: e.touches[0].clientX - tf.x, sy: e.touches[0].clientY - tf.y };
-      pinch.current = null;
-    } else if (e.touches.length === 2) {
-      drag.current = null;
-      pinch.current = { ...getDistAndMid(e.touches), scale: tf.scale, x: tf.x, y: tf.y };
-    }
-  };
-
-  const onTouchMove = e => {
+  handlers.current.onTouchMove = (e) => {
     e.preventDefault();
+    const t = tf.current;
     if (e.touches.length === 1 && drag.current) {
-      setTf(t => ({ ...t,
+      applyTf({ ...t,
         x: e.touches[0].clientX - drag.current.sx,
         y: e.touches[0].clientY - drag.current.sy,
-      }));
+      });
     } else if (e.touches.length === 2 && pinch.current) {
-      const { dist, mx, my } = getDistAndMid(e.touches);
+      const [a, b] = [e.touches[0], e.touches[1]];
+      const dist = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+      const mx = (a.clientX + b.clientX) / 2;
+      const my = (a.clientY + b.clientY) / 2;
       const ratio = clamp(pinch.current.scale * (dist / pinch.current.dist), MIN_SCALE, MAX_SCALE);
-      const dx = mx - pinch.current.mx;
-      const dy = my - pinch.current.my;
-      setTf({ scale: ratio, x: pinch.current.x + dx, y: pinch.current.y + dy });
+      applyTf({
+        scale: ratio,
+        x: pinch.current.x + (mx - pinch.current.mx),
+        y: pinch.current.y + (my - pinch.current.my),
+      });
     }
   };
 
-  const onTouchEnd = e => {
-    if (e.touches.length < 2) pinch.current = null;
-    if (e.touches.length === 0) drag.current = null;
-  };
-
-  // Attacher wheel + touchmove en passif=false (pour preventDefault)
+  // ── useEffect une seule fois — [] ──
   useEffect(() => {
     const el = boxRef.current;
     if (!el) return;
+    const wheel     = (e) => handlers.current.onWheel(e);
+    const touchmove = (e) => handlers.current.onTouchMove(e);
     const opts = { passive: false };
-    el.addEventListener("wheel",      onWheel,     opts);
-    el.addEventListener("touchmove",  onTouchMove, opts);
+    el.addEventListener("wheel",     wheel,     opts);
+    el.addEventListener("touchmove", touchmove, opts);
     return () => {
-      el.removeEventListener("wheel",     onWheel);
-      el.removeEventListener("touchmove", onTouchMove);
+      el.removeEventListener("wheel",     wheel);
+      el.removeEventListener("touchmove", touchmove);
     };
-  });
+  }, []);
 
-  const resetView = () => setTf({ x:0, y:0, scale:1 });
+  // Souris
+  const onMouseDown = e => {
+    isInteracting.current = true;
+    drag.current = { sx: e.clientX - tf.current.x, sy: e.clientY - tf.current.y };
+  };
+  const onMouseMove = e => {
+    if (!drag.current) return;
+    applyTf({ ...tf.current,
+      x: e.clientX - drag.current.sx,
+      y: e.clientY - drag.current.sy,
+    });
+  };
+  const onMouseUp = () => { drag.current = null; isInteracting.current = false; };
+
+  // Touch
+  const onTouchStart = e => {
+    isInteracting.current = true;
+    if (e.touches.length === 1) {
+      drag.current = {
+        sx: e.touches[0].clientX - tf.current.x,
+        sy: e.touches[0].clientY - tf.current.y,
+      };
+      pinch.current = null;
+    } else if (e.touches.length === 2) {
+      drag.current = null;
+      const [a, b] = [e.touches[0], e.touches[1]];
+      pinch.current = {
+        dist: Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY),
+        mx: (a.clientX + b.clientX) / 2,
+        my: (a.clientY + b.clientY) / 2,
+        scale: tf.current.scale,
+        x: tf.current.x,
+        y: tf.current.y,
+      };
+    }
+  };
+  const onTouchEnd = e => {
+    if (e.touches.length < 2) pinch.current = null;
+    if (e.touches.length === 0) { drag.current = null; isInteracting.current = false; }
+  };
+
+  const resetView = () => applyTf({ x:0, y:0, scale:1 });
 
   const KW = ({ words, color }) => (
     <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:"4px"}}>
@@ -400,17 +421,14 @@ function Venn({ venn }) {
     </div>
   );
 
-  const SZ = 440; // taille du canvas interne en px
+  const { x, y, scale } = tf.current;
 
   return (
     <div style={{position:"relative"}}>
-      {/* Hint mobile */}
       <p style={{fontSize:"10px",color:"#94A3B8",textAlign:"center",
         marginBottom:"8px",fontStyle:"italic"}}>
         Glisse pour naviguer · Pince pour zoomer
       </p>
-
-      {/* Fenêtre de vue */}
       <div
         ref={boxRef}
         onMouseDown={onMouseDown}
@@ -421,119 +439,69 @@ function Venn({ venn }) {
         onTouchEnd={onTouchEnd}
         style={{
           width:"100%", height:"340px",
-          overflow:"hidden", cursor:"grab",
-          borderRadius:"14px",
-          border:"1px solid #E2DDD6",
-          background:"#FAFAF8",
-          position:"relative",
-          touchAction:"none",
-          userSelect:"none",
+          overflow:"hidden", cursor: isInteracting.current ? "grabbing" : "grab",
+          borderRadius:"14px", border:"1px solid #E2DDD6",
+          background:"#FAFAF8", position:"relative",
+          touchAction:"none", userSelect:"none",
         }}>
-
-        {/* Canvas transformable */}
         <div style={{
           position:"absolute",
           top:"50%", left:"50%",
           width:`${SZ}px`, height:`${SZ}px`,
           marginLeft:`-${SZ/2}px`, marginTop:`-${SZ/2}px`,
-          transform:`translate(${tf.x}px,${tf.y}px) scale(${tf.scale})`,
+          transform:`translate(${x}px,${y}px) scale(${scale})`,
           transformOrigin:"center center",
-          transition: drag.current || pinch.current ? "none" : "transform .15s ease",
+          transition: isInteracting.current ? "none" : "transform .12s ease",
         }}>
-
-          {/* 4 cercles */}
           {[
-            {left:"4%",top:"4%",   bg:C+"18", border:`2px solid ${C}44`},
-            {left:"46%",top:"4%",  bg:B+"18", border:`2px solid ${B}44`},
-            {left:"4%",top:"46%",  bg:G+"18", border:`2px solid ${G}44`},
-            {left:"46%",top:"46%", bg:O+"18", border:`2px solid ${O}44`},
+            {left:"4%",top:"4%",   bg:C+"18", bd:`2px solid ${C}44`},
+            {left:"46%",top:"4%",  bg:B+"18", bd:`2px solid ${B}44`},
+            {left:"4%",top:"46%",  bg:G+"18", bd:`2px solid ${G}44`},
+            {left:"46%",top:"46%", bg:O+"18", bd:`2px solid ${O}44`},
           ].map((s,i)=>(
             <div key={i} style={{position:"absolute",width:"56%",height:"56%",
-              borderRadius:"50%",background:s.bg,border:s.border,
-              left:s.left,top:s.top}}/>
+              borderRadius:"50%",background:s.bg,border:s.bd,left:s.left,top:s.top}}/>
           ))}
-
-          {/* Titres piliers */}
-          <div style={{position:"absolute",top:"2%",left:"3%",
-            fontSize:"11px",fontWeight:700,color:C,fontFamily:"DM Sans,sans-serif"}}>
-            Ce que j'aime
-          </div>
-          <div style={{position:"absolute",top:"2%",right:"2%",
-            fontSize:"11px",fontWeight:700,color:B,fontFamily:"DM Sans,sans-serif",textAlign:"right"}}>
-            En quoi je suis doué
-          </div>
-          <div style={{position:"absolute",bottom:"2%",left:"3%",
-            fontSize:"11px",fontWeight:700,color:G,fontFamily:"DM Sans,sans-serif"}}>
-            Ce dont le monde a besoin
-          </div>
-          <div style={{position:"absolute",bottom:"2%",right:"2%",
-            fontSize:"11px",fontWeight:700,color:O,fontFamily:"DM Sans,sans-serif",textAlign:"right"}}>
-            Ce qui peut me faire vivre
-          </div>
-
-          {/* Mots-clés piliers */}
-          <div style={{position:"absolute",top:"15%",left:"5%",width:"26%"}}>
-            <KW words={love} color={C}/>
-          </div>
-          <div style={{position:"absolute",top:"15%",right:"5%",width:"26%"}}>
-            <KW words={good} color={B}/>
-          </div>
-          <div style={{position:"absolute",bottom:"15%",left:"5%",width:"26%"}}>
-            <KW words={need} color={G}/>
-          </div>
-          <div style={{position:"absolute",bottom:"15%",right:"5%",width:"26%"}}>
-            <KW words={paid} color={O}/>
-          </div>
-
-          {/* Intersections */}
-          <div style={{position:"absolute",top:"17%",left:"50%",
-            transform:"translateX(-50%)",width:"20%",textAlign:"center"}}>
+          <div style={{position:"absolute",top:"2%",left:"3%",fontSize:"11px",fontWeight:700,color:C,fontFamily:"DM Sans,sans-serif"}}>Ce que j'aime</div>
+          <div style={{position:"absolute",top:"2%",right:"2%",fontSize:"11px",fontWeight:700,color:B,fontFamily:"DM Sans,sans-serif",textAlign:"right"}}>En quoi je suis doué</div>
+          <div style={{position:"absolute",bottom:"2%",left:"3%",fontSize:"11px",fontWeight:700,color:G,fontFamily:"DM Sans,sans-serif"}}>Ce dont le monde a besoin</div>
+          <div style={{position:"absolute",bottom:"2%",right:"2%",fontSize:"11px",fontWeight:700,color:O,fontFamily:"DM Sans,sans-serif",textAlign:"right"}}>Ce qui peut me faire vivre</div>
+          <div style={{position:"absolute",top:"15%",left:"5%",width:"26%"}}><KW words={love} color={C}/></div>
+          <div style={{position:"absolute",top:"15%",right:"5%",width:"26%"}}><KW words={good} color={B}/></div>
+          <div style={{position:"absolute",bottom:"15%",left:"5%",width:"26%"}}><KW words={need} color={G}/></div>
+          <div style={{position:"absolute",bottom:"15%",right:"5%",width:"26%"}}><KW words={paid} color={O}/></div>
+          <div style={{position:"absolute",top:"17%",left:"50%",transform:"translateX(-50%)",width:"20%",textAlign:"center"}}>
             <Inter words={passion} label="Passion" color="#9B5070"/>
           </div>
-          <div style={{position:"absolute",top:"50%",left:"14%",
-            transform:"translateY(-50%)",width:"20%",textAlign:"center"}}>
+          <div style={{position:"absolute",top:"50%",left:"14%",transform:"translateY(-50%)",width:"20%",textAlign:"center"}}>
             <Inter words={mission} label="Mission" color="#488070"/>
           </div>
-          <div style={{position:"absolute",top:"50%",right:"14%",
-            transform:"translateY(-50%)",width:"20%",textAlign:"center"}}>
+          <div style={{position:"absolute",top:"50%",right:"14%",transform:"translateY(-50%)",width:"20%",textAlign:"center"}}>
             <Inter words={metier} label="Métier" color="#507090"/>
           </div>
-          <div style={{position:"absolute",bottom:"17%",left:"50%",
-            transform:"translateX(-50%)",width:"20%",textAlign:"center"}}>
+          <div style={{position:"absolute",bottom:"17%",left:"50%",transform:"translateX(-50%)",width:"20%",textAlign:"center"}}>
             <Inter words={vocation} label="Vocation" color="#8A7830"/>
           </div>
-
-          {/* Centre Ikigai */}
           <div style={{
             position:"absolute",top:"50%",left:"50%",
             transform:"translate(-50%,-50%)",
             width:"16%",height:"16%",borderRadius:"50%",
-            background:"rgba(201,169,110,.2)",
-            border:"2px solid #C9A96E",
+            background:"rgba(201,169,110,.2)",border:"2px solid #C9A96E",
             display:"flex",flexDirection:"column",
             alignItems:"center",justifyContent:"center",
             textAlign:"center",zIndex:10,
           }}>
-            <span style={{fontSize:"10px",fontWeight:600,color:"#8B6A30",
-              fontFamily:"Playfair Display,serif",lineHeight:1}}>IKIGAI</span>
-            <span style={{fontSize:"7px",color:"#A07840",
-              fontFamily:"DM Sans,sans-serif",lineHeight:1.2,marginTop:"2px"}}>
-              Raison d'être
-            </span>
+            <span style={{fontSize:"10px",fontWeight:600,color:"#8B6A30",fontFamily:"Playfair Display,serif",lineHeight:1}}>IKIGAI</span>
+            <span style={{fontSize:"7px",color:"#A07840",fontFamily:"DM Sans,sans-serif",lineHeight:1.2,marginTop:"2px"}}>Raison d'être</span>
           </div>
-
-        </div>{/* fin canvas */}
+        </div>
       </div>
-
-      {/* Bouton reset */}
       <button onClick={resetView} style={{
         display:"block",margin:"10px auto 0",
         fontSize:"11px",color:"#94A3B8",background:"none",
         border:"1px solid #E2DDD6",borderRadius:"6px",
         padding:"5px 14px",cursor:"pointer",fontFamily:"DM Sans,sans-serif",
-      }}>
-        Recentrer
-      </button>
+      }}>Recentrer</button>
     </div>
   );
 }
