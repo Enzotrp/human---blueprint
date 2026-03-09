@@ -283,7 +283,6 @@ function intersectKeywords(t1, t2, max=2) {
    VENN IKIGAI — VERSION HTML (écran, animée)
 ───────────────────────────────────────────── */
 function Venn({ venn }) {
-  // Mots-clés extraits et synthétisés par l'IA
   const love     = venn?.love     || [];
   const good     = venn?.good     || [];
   const need     = venn?.need     || [];
@@ -293,120 +292,248 @@ function Venn({ venn }) {
   const metier   = venn?.metier   || [];
   const vocation = venn?.vocation || [];
 
+  const C = "#C0586A", B = "#4A7CC0", G = "#3D9E70", O = "#B8862A";
+
+  // ── Pan / Zoom state ──
+  const [tf, setTf] = useState({ x:0, y:0, scale:1 });
+  const drag   = useRef(null);
+  const pinch  = useRef(null);
+  const boxRef = useRef(null);
+
+  const clamp = (val, mn, mx) => Math.min(mx, Math.max(mn, val));
+  const MIN_SCALE = 0.7, MAX_SCALE = 3.5;
+
+  // ── MOUSE events ──
+  const onMouseDown = e => {
+    e.preventDefault();
+    drag.current = { sx: e.clientX - tf.x, sy: e.clientY - tf.y };
+  };
+  const onMouseMove = e => {
+    if (!drag.current) return;
+    setTf(t => ({ ...t, x: e.clientX - drag.current.sx, y: e.clientY - drag.current.sy }));
+  };
+  const onMouseUp = () => { drag.current = null; };
+
+  // ── WHEEL zoom ──
+  const onWheel = e => {
+    e.preventDefault();
+    const factor = e.deltaY < 0 ? 1.12 : 0.9;
+    setTf(t => ({ ...t, scale: clamp(t.scale * factor, MIN_SCALE, MAX_SCALE) }));
+  };
+
+  // ── TOUCH events ──
+  const getDistAndMid = touches => {
+    const [a, b] = [touches[0], touches[1]];
+    const dx = a.clientX - b.clientX, dy = a.clientY - b.clientY;
+    return {
+      dist: Math.hypot(dx, dy),
+      mx: (a.clientX + b.clientX) / 2,
+      my: (a.clientY + b.clientY) / 2,
+    };
+  };
+
+  const onTouchStart = e => {
+    if (e.touches.length === 1) {
+      drag.current = { sx: e.touches[0].clientX - tf.x, sy: e.touches[0].clientY - tf.y };
+      pinch.current = null;
+    } else if (e.touches.length === 2) {
+      drag.current = null;
+      pinch.current = { ...getDistAndMid(e.touches), scale: tf.scale, x: tf.x, y: tf.y };
+    }
+  };
+
+  const onTouchMove = e => {
+    e.preventDefault();
+    if (e.touches.length === 1 && drag.current) {
+      setTf(t => ({ ...t,
+        x: e.touches[0].clientX - drag.current.sx,
+        y: e.touches[0].clientY - drag.current.sy,
+      }));
+    } else if (e.touches.length === 2 && pinch.current) {
+      const { dist, mx, my } = getDistAndMid(e.touches);
+      const ratio = clamp(pinch.current.scale * (dist / pinch.current.dist), MIN_SCALE, MAX_SCALE);
+      const dx = mx - pinch.current.mx;
+      const dy = my - pinch.current.my;
+      setTf({ scale: ratio, x: pinch.current.x + dx, y: pinch.current.y + dy });
+    }
+  };
+
+  const onTouchEnd = e => {
+    if (e.touches.length < 2) pinch.current = null;
+    if (e.touches.length === 0) drag.current = null;
+  };
+
+  // Attacher wheel + touchmove en passif=false (pour preventDefault)
+  useEffect(() => {
+    const el = boxRef.current;
+    if (!el) return;
+    const opts = { passive: false };
+    el.addEventListener("wheel",      onWheel,     opts);
+    el.addEventListener("touchmove",  onTouchMove, opts);
+    return () => {
+      el.removeEventListener("wheel",     onWheel);
+      el.removeEventListener("touchmove", onTouchMove);
+    };
+  });
+
+  const resetView = () => setTf({ x:0, y:0, scale:1 });
+
   const KW = ({ words, color }) => (
-    <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:"3px"}}>
+    <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:"4px"}}>
       {words.map((w,i) => (
-        <span key={i} style={{
-          fontSize:"10px", color, fontFamily:"DM Sans,sans-serif",
-          fontWeight:500, lineHeight:1.4, textAlign:"center",
-        }}>{w}</span>
+        <span key={i} style={{fontSize:"11px",color,fontFamily:"DM Sans,sans-serif",
+          fontWeight:600,lineHeight:1.3,textAlign:"center",
+          background:"rgba(255,255,255,.7)",padding:"1px 5px",borderRadius:"4px"}}>{w}</span>
       ))}
     </div>
   );
 
   const Inter = ({ words, label, color }) => (
-    <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:"2px"}}>
-      <span style={{fontSize:"8px",color,fontStyle:"italic",fontWeight:600,
-        fontFamily:"DM Sans,sans-serif",opacity:.8}}>{label}</span>
+    <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:"3px"}}>
+      <span style={{fontSize:"9px",color,fontStyle:"italic",fontWeight:700,
+        fontFamily:"DM Sans,sans-serif",background:"rgba(255,255,255,.8)",
+        padding:"1px 6px",borderRadius:"4px"}}>{label}</span>
       {words.map((w,i) => (
         <span key={i} style={{fontSize:"9px",color,fontFamily:"DM Sans,sans-serif",
-          fontWeight:400,lineHeight:1.3,textAlign:"center",opacity:.75}}>{w}</span>
+          fontWeight:500,lineHeight:1.3,textAlign:"center",opacity:.85}}>{w}</span>
       ))}
     </div>
   );
 
-  const C = "#C0586A", B = "#4A7CC0", G = "#3D9E70", O = "#B8862A";
+  const SZ = 440; // taille du canvas interne en px
 
   return (
-    <div style={{position:"relative",width:"100%",maxWidth:"420px",
-      margin:"0 auto",aspectRatio:"1/1",userSelect:"none"}}>
+    <div style={{position:"relative"}}>
+      {/* Hint mobile */}
+      <p style={{fontSize:"10px",color:"#94A3B8",textAlign:"center",
+        marginBottom:"8px",fontStyle:"italic"}}>
+        Glisse pour naviguer · Pince pour zoomer
+      </p>
 
-      {/* ── 4 CERCLES ── */}
-      {[
-        {left:"4%", top:"4%",   bg:C+"22", border:`1.5px solid ${C}55`},
-        {left:"46%",top:"4%",   bg:B+"22", border:`1.5px solid ${B}55`},
-        {left:"4%", top:"46%",  bg:G+"22", border:`1.5px solid ${G}55`},
-        {left:"46%",top:"46%",  bg:O+"22", border:`1.5px solid ${O}55`},
-      ].map((s,i) => (
-        <div key={i} style={{
-          position:"absolute", width:"56%", height:"56%",
-          borderRadius:"50%", background:s.bg, border:s.border,
-          left:s.left, top:s.top,
-        }}/>
-      ))}
+      {/* Fenêtre de vue */}
+      <div
+        ref={boxRef}
+        onMouseDown={onMouseDown}
+        onMouseMove={onMouseMove}
+        onMouseUp={onMouseUp}
+        onMouseLeave={onMouseUp}
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+        style={{
+          width:"100%", height:"340px",
+          overflow:"hidden", cursor:"grab",
+          borderRadius:"14px",
+          border:"1px solid #E2DDD6",
+          background:"#FAFAF8",
+          position:"relative",
+          touchAction:"none",
+          userSelect:"none",
+        }}>
 
-      {/* ── TITRES ── */}
-      <div style={{position:"absolute",top:"1%",left:"3%",
-        fontSize:"10px",fontWeight:700,color:C,fontFamily:"DM Sans,sans-serif"}}>
-        Ce que j'aime
-      </div>
-      <div style={{position:"absolute",top:"1%",right:"2%",
-        fontSize:"10px",fontWeight:700,color:B,fontFamily:"DM Sans,sans-serif",textAlign:"right"}}>
-        En quoi je suis doué
-      </div>
-      <div style={{position:"absolute",bottom:"1%",left:"3%",
-        fontSize:"10px",fontWeight:700,color:G,fontFamily:"DM Sans,sans-serif"}}>
-        Ce dont le monde a besoin
-      </div>
-      <div style={{position:"absolute",bottom:"1%",right:"2%",
-        fontSize:"10px",fontWeight:700,color:O,fontFamily:"DM Sans,sans-serif",textAlign:"right"}}>
-        Ce qui peut me faire vivre
+        {/* Canvas transformable */}
+        <div style={{
+          position:"absolute",
+          top:"50%", left:"50%",
+          width:`${SZ}px`, height:`${SZ}px`,
+          marginLeft:`-${SZ/2}px`, marginTop:`-${SZ/2}px`,
+          transform:`translate(${tf.x}px,${tf.y}px) scale(${tf.scale})`,
+          transformOrigin:"center center",
+          transition: drag.current || pinch.current ? "none" : "transform .15s ease",
+        }}>
+
+          {/* 4 cercles */}
+          {[
+            {left:"4%",top:"4%",   bg:C+"18", border:`2px solid ${C}44`},
+            {left:"46%",top:"4%",  bg:B+"18", border:`2px solid ${B}44`},
+            {left:"4%",top:"46%",  bg:G+"18", border:`2px solid ${G}44`},
+            {left:"46%",top:"46%", bg:O+"18", border:`2px solid ${O}44`},
+          ].map((s,i)=>(
+            <div key={i} style={{position:"absolute",width:"56%",height:"56%",
+              borderRadius:"50%",background:s.bg,border:s.border,
+              left:s.left,top:s.top}}/>
+          ))}
+
+          {/* Titres piliers */}
+          <div style={{position:"absolute",top:"2%",left:"3%",
+            fontSize:"11px",fontWeight:700,color:C,fontFamily:"DM Sans,sans-serif"}}>
+            Ce que j'aime
+          </div>
+          <div style={{position:"absolute",top:"2%",right:"2%",
+            fontSize:"11px",fontWeight:700,color:B,fontFamily:"DM Sans,sans-serif",textAlign:"right"}}>
+            En quoi je suis doué
+          </div>
+          <div style={{position:"absolute",bottom:"2%",left:"3%",
+            fontSize:"11px",fontWeight:700,color:G,fontFamily:"DM Sans,sans-serif"}}>
+            Ce dont le monde a besoin
+          </div>
+          <div style={{position:"absolute",bottom:"2%",right:"2%",
+            fontSize:"11px",fontWeight:700,color:O,fontFamily:"DM Sans,sans-serif",textAlign:"right"}}>
+            Ce qui peut me faire vivre
+          </div>
+
+          {/* Mots-clés piliers */}
+          <div style={{position:"absolute",top:"15%",left:"5%",width:"26%"}}>
+            <KW words={love} color={C}/>
+          </div>
+          <div style={{position:"absolute",top:"15%",right:"5%",width:"26%"}}>
+            <KW words={good} color={B}/>
+          </div>
+          <div style={{position:"absolute",bottom:"15%",left:"5%",width:"26%"}}>
+            <KW words={need} color={G}/>
+          </div>
+          <div style={{position:"absolute",bottom:"15%",right:"5%",width:"26%"}}>
+            <KW words={paid} color={O}/>
+          </div>
+
+          {/* Intersections */}
+          <div style={{position:"absolute",top:"17%",left:"50%",
+            transform:"translateX(-50%)",width:"20%",textAlign:"center"}}>
+            <Inter words={passion} label="Passion" color="#9B5070"/>
+          </div>
+          <div style={{position:"absolute",top:"50%",left:"14%",
+            transform:"translateY(-50%)",width:"20%",textAlign:"center"}}>
+            <Inter words={mission} label="Mission" color="#488070"/>
+          </div>
+          <div style={{position:"absolute",top:"50%",right:"14%",
+            transform:"translateY(-50%)",width:"20%",textAlign:"center"}}>
+            <Inter words={metier} label="Métier" color="#507090"/>
+          </div>
+          <div style={{position:"absolute",bottom:"17%",left:"50%",
+            transform:"translateX(-50%)",width:"20%",textAlign:"center"}}>
+            <Inter words={vocation} label="Vocation" color="#8A7830"/>
+          </div>
+
+          {/* Centre Ikigai */}
+          <div style={{
+            position:"absolute",top:"50%",left:"50%",
+            transform:"translate(-50%,-50%)",
+            width:"16%",height:"16%",borderRadius:"50%",
+            background:"rgba(201,169,110,.2)",
+            border:"2px solid #C9A96E",
+            display:"flex",flexDirection:"column",
+            alignItems:"center",justifyContent:"center",
+            textAlign:"center",zIndex:10,
+          }}>
+            <span style={{fontSize:"10px",fontWeight:600,color:"#8B6A30",
+              fontFamily:"Playfair Display,serif",lineHeight:1}}>IKIGAI</span>
+            <span style={{fontSize:"7px",color:"#A07840",
+              fontFamily:"DM Sans,sans-serif",lineHeight:1.2,marginTop:"2px"}}>
+              Raison d'être
+            </span>
+          </div>
+
+        </div>{/* fin canvas */}
       </div>
 
-      {/* ── MOTS-CLÉS CERCLES (zones exclusives) ── */}
-      <div style={{position:"absolute",top:"14%",left:"7%",width:"24%"}}>
-        <KW words={love} color={C}/>
-      </div>
-      <div style={{position:"absolute",top:"14%",right:"7%",width:"24%"}}>
-        <KW words={good} color={B}/>
-      </div>
-      <div style={{position:"absolute",bottom:"14%",left:"7%",width:"24%"}}>
-        <KW words={need} color={G}/>
-      </div>
-      <div style={{position:"absolute",bottom:"14%",right:"7%",width:"24%"}}>
-        <KW words={paid} color={O}/>
-      </div>
-
-      {/* ── INTERSECTIONS ── */}
-      {/* Passion : haut centre */}
-      <div style={{position:"absolute",top:"16%",left:"50%",
-        transform:"translateX(-50%)",width:"18%",textAlign:"center"}}>
-        <Inter words={passion} label="Passion" color="#9B5070"/>
-      </div>
-      {/* Mission : centre gauche */}
-      <div style={{position:"absolute",top:"50%",left:"16%",
-        transform:"translateY(-50%)",width:"18%",textAlign:"center"}}>
-        <Inter words={mission} label="Mission" color="#488070"/>
-      </div>
-      {/* Métier : centre droit */}
-      <div style={{position:"absolute",top:"50%",right:"16%",
-        transform:"translateY(-50%)",width:"18%",textAlign:"center"}}>
-        <Inter words={metier} label="Métier" color="#507090"/>
-      </div>
-      {/* Vocation : bas centre */}
-      <div style={{position:"absolute",bottom:"16%",left:"50%",
-        transform:"translateX(-50%)",width:"18%",textAlign:"center"}}>
-        <Inter words={vocation} label="Vocation" color="#8A7830"/>
-      </div>
-
-      {/* ── CENTRE IKIGAI ── */}
-      <div style={{
-        position:"absolute",top:"50%",left:"50%",
-        transform:"translate(-50%,-50%)",
-        width:"17%",height:"17%",borderRadius:"50%",
-        background:"rgba(201,169,110,.15)",
-        border:"2px solid #C9A96E",
-        display:"flex",flexDirection:"column",
-        alignItems:"center",justifyContent:"center",
-        textAlign:"center",zIndex:10,
+      {/* Bouton reset */}
+      <button onClick={resetView} style={{
+        display:"block",margin:"10px auto 0",
+        fontSize:"11px",color:"#94A3B8",background:"none",
+        border:"1px solid #E2DDD6",borderRadius:"6px",
+        padding:"5px 14px",cursor:"pointer",fontFamily:"DM Sans,sans-serif",
       }}>
-        <span style={{fontSize:"9px",fontWeight:600,color:"#8B6A30",
-          fontFamily:"Playfair Display,serif",lineHeight:1}}>IKIGAI</span>
-        <span style={{fontSize:"6px",color:"#A07840",
-          fontFamily:"DM Sans,sans-serif",lineHeight:1.2,marginTop:"2px"}}>
-          Raison d'être
-        </span>
-      </div>
+        Recentrer
+      </button>
     </div>
   );
 }
@@ -546,13 +673,23 @@ export default function App(){
 
   /* ── GÉNÉRATION SVG VENN POUR EXPORT (utilise mots-clés IA) ── */
   const generateVennSVG = (vennData) => {
-    const trunc = (s, n=20) => s && s.length > n ? s.slice(0,n-1)+"…" : (s||"");
-    const listRows = (kws, x, y, color) => (kws||[]).map((k,i) =>
-      `<text x="${x}" y="${y + i*13}" text-anchor="middle" font-size="9" fill="${color}" font-family="DM Sans,sans-serif">${trunc(k)}</text>`
-    ).join("");
-    const interRows = (kws, x, y, color) => (kws||[]).map((k,i) =>
-      `<text x="${x}" y="${y + i*12}" text-anchor="middle" font-size="8" fill="${color}" font-family="DM Sans,sans-serif" font-style="italic">${trunc(k,16)}</text>`
-    ).join("");
+    const trunc = (s, n=22) => s && s.length > n ? s.slice(0,n-1)+"…" : (s||"");
+
+    // Centrage vertical dynamique : cy = centre de la zone, lh = interligne
+    const listRows = (kws, x, cy, color, lh=14) => {
+      const arr = kws || [];
+      const startY = cy - ((arr.length - 1) * lh) / 2;
+      return arr.map((k,i) =>
+        `<text x="${x}" y="${startY + i*lh}" text-anchor="middle" font-size="10" fill="${color}" font-family="DM Sans,sans-serif" font-weight="600">${trunc(k)}</text>`
+      ).join("");
+    };
+    const interRows = (kws, x, cy, color, lh=13) => {
+      const arr = kws || [];
+      const startY = cy - ((arr.length - 1) * lh) / 2;
+      return arr.map((k,i) =>
+        `<text x="${x}" y="${startY + i*lh}" text-anchor="middle" font-size="9" fill="${color}" font-family="DM Sans,sans-serif" font-style="italic">${trunc(k,18)}</text>`
+      ).join("");
+    };
 
     const love     = vennData?.love     || [];
     const good     = vennData?.good     || [];
@@ -563,6 +700,13 @@ export default function App(){
     const metier   = vennData?.metier   || [];
     const vocation = vennData?.vocation || [];
 
+    // Centres des zones exclusives (hors intersections) de chaque cercle
+    // Cercles : love(222,222) good(378,222) need(222,378) paid(378,378) r=155
+    // Zone exclusive love  : haut-gauche  → centroid ≈ (148, 172)
+    // Zone exclusive good  : haut-droite  → centroid ≈ (452, 172)
+    // Zone exclusive need  : bas-gauche   → centroid ≈ (148, 428)
+    // Zone exclusive paid  : bas-droite   → centroid ≈ (452, 428)
+
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" style="width:100%;max-width:500px;display:block;margin:0 auto">
       <defs>
         <radialGradient id="g1"><stop offset="0%" stop-color="#C0586A" stop-opacity="0.15"/><stop offset="100%" stop-color="#C0586A" stop-opacity="0.04"/></radialGradient>
@@ -570,29 +714,42 @@ export default function App(){
         <radialGradient id="g3"><stop offset="0%" stop-color="#3D9E70" stop-opacity="0.15"/><stop offset="100%" stop-color="#3D9E70" stop-opacity="0.04"/></radialGradient>
         <radialGradient id="g4"><stop offset="0%" stop-color="#B8862A" stop-opacity="0.15"/><stop offset="100%" stop-color="#B8862A" stop-opacity="0.04"/></radialGradient>
       </defs>
+
+      <!-- Cercles -->
       <circle cx="222" cy="222" r="155" fill="url(#g1)" stroke="#C0586A" stroke-width="1.5"/>
       <circle cx="378" cy="222" r="155" fill="url(#g2)" stroke="#4A7CC0" stroke-width="1.5"/>
       <circle cx="222" cy="378" r="155" fill="url(#g3)" stroke="#3D9E70" stroke-width="1.5"/>
       <circle cx="378" cy="378" r="155" fill="url(#g4)" stroke="#B8862A" stroke-width="1.5"/>
+
+      <!-- Centre Ikigai -->
       <circle cx="300" cy="300" r="42" fill="#C9A96E18" stroke="#C9A96E" stroke-width="2"/>
       <text x="300" y="296" text-anchor="middle" font-size="12" fill="#8B6A30" font-family="serif" font-weight="600">IKIGAI</text>
       <text x="300" y="310" text-anchor="middle" font-size="8" fill="#A07840" font-family="sans-serif">Raison d'être</text>
-      <text x="150" y="62" text-anchor="middle" font-size="12" fill="#C0586A" font-family="sans-serif" font-weight="700">Ce que j'aime</text>
-      <text x="450" y="62" text-anchor="middle" font-size="12" fill="#4A7CC0" font-family="sans-serif" font-weight="700">En quoi je suis doué</text>
-      <text x="150" y="556" text-anchor="middle" font-size="12" fill="#3D9E70" font-family="sans-serif" font-weight="700">Ce dont le monde a besoin</text>
-      <text x="450" y="556" text-anchor="middle" font-size="12" fill="#B8862A" font-family="sans-serif" font-weight="700">Ce qui peut me faire vivre</text>
-      ${listRows(love, 148, 108 - love.length*6, "#B04060")}
-      ${listRows(good, 452, 108 - good.length*6, "#3A6CB0")}
-      ${listRows(need, 148, 398 - need.length*6, "#2D8E60")}
-      ${listRows(paid, 452, 398 - paid.length*6, "#A87620")}
-      <text x="300" y="148" text-anchor="middle" font-size="9" fill="#7B4060" font-family="sans-serif" font-style="italic" font-weight="600">Passion</text>
-      ${interRows(passion, 300, 162, "#8B5070")}
-      <text x="180" y="305" text-anchor="middle" font-size="9" fill="#487060" font-family="sans-serif" font-style="italic" font-weight="600">Mission</text>
-      ${interRows(mission, 180, 319, "#508070")}
-      <text x="420" y="305" text-anchor="middle" font-size="9" fill="#506890" font-family="sans-serif" font-style="italic" font-weight="600">Métier</text>
-      ${interRows(metier, 420, 319, "#607090")}
-      <text x="300" y="452" text-anchor="middle" font-size="9" fill="#7A6820" font-family="sans-serif" font-style="italic" font-weight="600">Vocation</text>
-      ${interRows(vocation, 300, 466, "#8A7830")}
+
+      <!-- Titres piliers -->
+      <text x="148" y="55" text-anchor="middle" font-size="12" fill="#C0586A" font-family="sans-serif" font-weight="700">Ce que j'aime</text>
+      <text x="452" y="55" text-anchor="middle" font-size="12" fill="#4A7CC0" font-family="sans-serif" font-weight="700">En quoi je suis doué</text>
+      <text x="148" y="562" text-anchor="middle" font-size="12" fill="#3D9E70" font-family="sans-serif" font-weight="700">Ce dont le monde a besoin</text>
+      <text x="452" y="562" text-anchor="middle" font-size="12" fill="#B8862A" font-family="sans-serif" font-weight="700">Ce qui peut me faire vivre</text>
+
+      <!-- Mots-clés piliers — centrés verticalement dans la zone exclusive -->
+      ${listRows(love,     148, 172, "#B04060")}
+      ${listRows(good,     452, 172, "#3A6CB0")}
+      ${listRows(need,     148, 428, "#2D8E60")}
+      ${listRows(paid,     452, 428, "#A87620")}
+
+      <!-- Intersections — label + mots centrés -->
+      <text x="300" y="145" text-anchor="middle" font-size="9" fill="#7B4060" font-family="sans-serif" font-style="italic" font-weight="700">Passion</text>
+      ${interRows(passion, 300, 168, "#8B5070")}
+
+      <text x="170" y="300" text-anchor="middle" font-size="9" fill="#487060" font-family="sans-serif" font-style="italic" font-weight="700">Mission</text>
+      ${interRows(mission, 170, 318, "#508070")}
+
+      <text x="430" y="300" text-anchor="middle" font-size="9" fill="#506890" font-family="sans-serif" font-style="italic" font-weight="700">Métier</text>
+      ${interRows(metier,  430, 318, "#607090")}
+
+      <text x="300" y="452" text-anchor="middle" font-size="9" fill="#7A6820" font-family="sans-serif" font-style="italic" font-weight="700">Vocation</text>
+      ${interRows(vocation, 300, 470, "#8A7830")}
     </svg>`;
   };
 
@@ -1367,25 +1524,13 @@ export default function App(){
               </div>
             </div>
 
-            {/* ── VENN IKIGAI — pleine largeur, zoomable mobile ── */}
-            <div style={{background:"#FFFFFF",borderRadius:"16px",padding:"36px",border:"1px solid #E2DDD6"}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"24px"}}>
-                <p style={{fontSize:"9px",letterSpacing:"2.5px",color:"#94A3B8",textTransform:"uppercase"}}>
-                  Carte Ikigai Personnalisée
-                </p>
-                <p style={{fontSize:"10px",color:"#C4B8A8",fontStyle:"italic"}}>
-                  📱 Pince pour zoomer
-                </p>
-              </div>
-              <div style={{
-                overflow:"auto", WebkitOverflowScrolling:"touch",
-                touchAction:"pinch-zoom", cursor:"zoom-in",
-                maxHeight:"520px",
-              }}>
-                <div style={{minWidth:"340px"}}>
-                  <Venn venn={out.venn}/>
-                </div>
-              </div>
+            {/* ── VENN IKIGAI — pleine largeur, pan+zoom natif ── */}
+            <div style={{background:"#FFFFFF",borderRadius:"16px",padding:"28px 20px",border:"1px solid #E2DDD6"}}>
+              <p style={{fontSize:"9px",letterSpacing:"2.5px",color:"#94A3B8",
+                textTransform:"uppercase",marginBottom:"20px",textAlign:"center"}}>
+                Carte Ikigai Personnalisée
+              </p>
+              <Venn venn={out.venn}/>
             </div>
 
             {/* ── PROFIL COMPORTEMENTAL ── */}
