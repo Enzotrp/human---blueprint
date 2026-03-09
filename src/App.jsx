@@ -799,7 +799,7 @@ export default function App(){
             {/* Accroche */}
             <p className="au d2" style={{fontSize:"16px",color:"#94A3B8",lineHeight:1.8,
               maxWidth:"460px",margin:"0 auto 40px",fontWeight:300}}>
-              En 15 minutes, découvre comment tu fonctionnes,
+              En 20 minutes, découvre comment tu fonctionnes,
               ce qui te donne de l'énergie et où tu pourrais aller.
             </p>
 
