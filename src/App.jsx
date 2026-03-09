@@ -143,23 +143,23 @@ const QS = [
   { id:9,  w:[{t:"Indépendant",d:"D"},{t:"Engageant",d:"I"},{t:"Coopératif",d:"S"},{t:"Attentif",d:"C"}]},
   { id:10, w:[{t:"Déterminé",d:"D"},{t:"Pétillant",d:"I"},{t:"Loyal",d:"S"},{t:"Discipliné",d:"C"}]},
   { id:11, w:[{t:"Aventureux",d:"D"},{t:"Communicatif",d:"I"},{t:"Modeste",d:"S"},{t:"Objectif",d:"C"}]},
-  { id:12, w:[{t:"Énergique",d:"D"},{t:"Magnétique",d:"I"},{t:"Tolérant",d:"S"},{t:"Complet",d:"C"}]},
+  { id:12, w:[{t:"Énergique",d:"D"},{t:"Charismatique",d:"I"},{t:"Tolérant",d:"S"},{t:"Complet",d:"C"}]},
   { id:13, w:[{t:"Autonome",d:"D"},{t:"Animé",d:"I"},{t:"Sincère",d:"S"},{t:"Précis",d:"C"}]},
   { id:14, w:[{t:"Ambitieux",d:"D"},{t:"Enjoué",d:"I"},{t:"Équilibré",d:"S"},{t:"Réfléchi",d:"C"}]},
   { id:15, w:[{t:"Franc",d:"D"},{t:"Jovial",d:"I"},{t:"Décontracté",d:"S"},{t:"Méthodique",d:"C"}]},
   { id:16, w:[{t:"Courageux",d:"D"},{t:"Optimiste",d:"I"},{t:"Bienveillant",d:"S"},{t:"Perfectionniste",d:"C"}]},
-  { id:17, w:[{t:"Orienté résultats",d:"D"},{t:"Dynamique",d:"I"},{t:"Protecteur",d:"S"},{t:"Ordonné",d:"C"}]},
-  { id:18, w:[{t:"Téméraire",d:"D"},{t:"Convaincant",d:"I"},{t:"Empathique",d:"S"},{t:"Rationnel",d:"C"}]},
+  { id:17, w:[{t:"Performant",d:"D"},{t:"Dynamique",d:"I"},{t:"Protecteur",d:"S"},{t:"Ordonné",d:"C"}]},
+  { id:18, w:[{t:"Intrépide",d:"D"},{t:"Convaincant",d:"I"},{t:"Empathique",d:"S"},{t:"Rationnel",d:"C"}]},
   { id:19, w:[{t:"Actif",d:"D"},{t:"Positif",d:"I"},{t:"Prévisible",d:"S"},{t:"Exact",d:"C"}]},
-  { id:20, w:[{t:"Autoritaire",d:"D"},{t:"Rayonnant",d:"I"},{t:"Accommodant",d:"S"},{t:"Consciencieux",d:"C"}]},
+  { id:20, w:[{t:"Directif",d:"D"},{t:"Rayonnant",d:"I"},{t:"Accommodant",d:"S"},{t:"Consciencieux",d:"C"}]},
   { id:21, w:[{t:"Ferme",d:"D"},{t:"Généreux",d:"I"},{t:"Paisible",d:"S"},{t:"Scrupuleux",d:"C"}]},
   { id:22, w:[{t:"Décisif",d:"D"},{t:"Vibrant",d:"I"},{t:"Solidaire",d:"S"},{t:"Mesuré",d:"C"}]},
   { id:23, w:[{t:"Volontaire",d:"D"},{t:"Créatif",d:"I"},{t:"Attentionné",d:"S"},{t:"Rigoureux",d:"C"}]},
   { id:24, w:[{t:"Tenace",d:"D"},{t:"Curieux",d:"I"},{t:"Prévenant",d:"S"},{t:"Systématique",d:"C"}]},
-  { id:25, w:[{t:"Assertif",d:"D"},{t:"Stimulant",d:"I"},{t:"Rassurant",d:"S"},{t:"Factuel",d:"C"}]},
-  { id:26, w:[{t:"Persévérant",d:"D"},{t:"Expansif",d:"I"},{t:"Conciliant",d:"S"},{t:"Précautionneux",d:"C"}]},
+  { id:25, w:[{t:"Sûr de lui",d:"D"},{t:"Stimulant",d:"I"},{t:"Rassurant",d:"S"},{t:"Factuel",d:"C"}]},
+  { id:26, w:[{t:"Persévérant",d:"D"},{t:"Démonstratif",d:"I"},{t:"Conciliant",d:"S"},{t:"Précautionneux",d:"C"}]},
   { id:27, w:[{t:"Proactif",d:"D"},{t:"Inspiré",d:"I"},{t:"Disponible",d:"S"},{t:"Sensé",d:"C"}]},
-  { id:28, w:[{t:"Incisif",d:"D"},{t:"Vivace",d:"I"},{t:"Calme",d:"S"},{t:"Pointilleux",d:"C"}]},
+  { id:28, w:[{t:"Tranchant",d:"D"},{t:"Vif",d:"I"},{t:"Calme",d:"S"},{t:"Soigneux",d:"C"}]},
 ];
 
 // Chaque pilier Ikigai = 2 micro-questions combinées en une réponse
@@ -878,7 +878,7 @@ export default function App(){
             </h2>
             <p className="au d2" style={{fontSize:"15px",color:"#64748B",lineHeight:1.8,
               marginBottom:"24px",fontWeight:300}}>
-              Tu vas voir <strong style={{color:"#0D1B2E"}}>20 séries</strong> de quatre descripteurs
+              Tu vas voir <strong style={{color:"#0D1B2E"}}>28 séries</strong> de quatre descripteurs
               de personnalité. Pour chaque série, indique le mot qui te ressemble le{" "}
               <strong style={{color:"#0D1B2E"}}>plus</strong> et celui qui te ressemble le{" "}
               <strong style={{color:"#C9A96E"}}>moins</strong>, selon ta nature profonde dans
@@ -908,7 +908,7 @@ export default function App(){
             <div style={{display:"flex",justifyContent:"space-between",
               alignItems:"center",marginBottom:"40px"}}>
               <p style={{fontSize:"11px",color:"#94A3B8",letterSpacing:"2px",textTransform:"uppercase"}}>
-                Question {qi+1} / 20
+                Question {qi+1} / 28
               </p>
               <div style={{display:"flex",gap:"3px",flexWrap:"wrap",maxWidth:"180px",justifyContent:"flex-end"}}>
                 {QS.map((_,i)=>(
