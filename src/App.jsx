@@ -291,128 +291,106 @@ function Venn({ venn }) {
   const mission  = venn?.mission  || [];
   const metier   = venn?.metier   || [];
   const vocation = venn?.vocation || [];
-
   const C = "#C0586A", B = "#4A7CC0", G = "#3D9E70", O = "#B8862A";
-  const MIN_SCALE = 0.7, MAX_SCALE = 3.5;
-  const SZ = 440;
+  const SZ = 440, MIN = 0.7, MAX = 3.5;
 
-  // ── Tout l'état de transform dans un seul ref (pas de state) ──
-  // On force le re-render manuellement via un compteur
-  const [, forceRender] = useState(0);
-  const tf    = useRef({ x:0, y:0, scale:1 });
-  const drag  = useRef(null);
-  const pinch = useRef(null);
-  const boxRef = useRef(null);
-  const isInteracting = useRef(false);
+  // ── Zéro state React — tout en refs + DOM direct ──
+  const canvasRef = useRef(null);
+  const tf   = useRef({ x:0, y:0, s:1 });
+  const drag = useRef(null);
+  const pinch= useRef(null);
 
-  const clamp = (val, mn, mx) => Math.min(mx, Math.max(mn, val));
+  const clamp = (v,a,b) => Math.min(b, Math.max(a, v));
 
-  const applyTf = (next) => {
-    tf.current = next;
-    forceRender(n => n + 1);
-  };
-
-  // ── Handlers stables — définis une seule fois via useRef ──
-  const handlers = useRef({});
-  handlers.current.onWheel = (e) => {
-    e.preventDefault();
-    const factor = e.deltaY < 0 ? 1.12 : 0.9;
-    applyTf({ ...tf.current, scale: clamp(tf.current.scale * factor, MIN_SCALE, MAX_SCALE) });
-  };
-  handlers.current.onTouchMove = (e) => {
-    e.preventDefault();
-    const t = tf.current;
-    if (e.touches.length === 1 && drag.current) {
-      applyTf({ ...t,
-        x: e.touches[0].clientX - drag.current.sx,
-        y: e.touches[0].clientY - drag.current.sy,
-      });
-    } else if (e.touches.length === 2 && pinch.current) {
-      const [a, b] = [e.touches[0], e.touches[1]];
-      const dist = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
-      const mx = (a.clientX + b.clientX) / 2;
-      const my = (a.clientY + b.clientY) / 2;
-      const ratio = clamp(pinch.current.scale * (dist / pinch.current.dist), MIN_SCALE, MAX_SCALE);
-      applyTf({
-        scale: ratio,
-        x: pinch.current.x + (mx - pinch.current.mx),
-        y: pinch.current.y + (my - pinch.current.my),
-      });
-    }
-  };
-
-  // ── useEffect une seule fois — [] ──
-  useEffect(() => {
-    const el = boxRef.current;
+  const commit = () => {
+    const el = canvasRef.current;
     if (!el) return;
-    const wheel     = (e) => handlers.current.onWheel(e);
-    const touchmove = (e) => handlers.current.onTouchMove(e);
+    const {x,y,s} = tf.current;
+    el.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px)) scale(${s})`;
+  };
+
+  const resetView = () => { tf.current = {x:0,y:0,s:1}; commit(); };
+
+  useEffect(() => {
+    commit();
+    const box = canvasRef.current?.parentElement;
+    if (!box) return;
+
+    const onWheel = e => {
+      e.preventDefault();
+      tf.current.s = clamp(tf.current.s * (e.deltaY < 0 ? 1.12 : 0.9), MIN, MAX);
+      commit();
+    };
+
+    const onTouchMove = e => {
+      e.preventDefault();
+      if (e.touches.length === 1 && drag.current) {
+        tf.current.x = e.touches[0].clientX - drag.current.sx;
+        tf.current.y = e.touches[0].clientY - drag.current.sy;
+        commit();
+      } else if (e.touches.length === 2 && pinch.current) {
+        const [a,b] = [e.touches[0], e.touches[1]];
+        const dist = Math.hypot(a.clientX-b.clientX, a.clientY-b.clientY);
+        const mx = (a.clientX+b.clientX)/2, my = (a.clientY+b.clientY)/2;
+        tf.current.s = clamp(pinch.current.s * (dist/pinch.current.d), MIN, MAX);
+        tf.current.x = pinch.current.x + (mx - pinch.current.mx);
+        tf.current.y = pinch.current.y + (my - pinch.current.my);
+        commit();
+      }
+    };
+
     const opts = { passive: false };
-    el.addEventListener("wheel",     wheel,     opts);
-    el.addEventListener("touchmove", touchmove, opts);
+    box.addEventListener("wheel",     onWheel,     opts);
+    box.addEventListener("touchmove", onTouchMove, opts);
     return () => {
-      el.removeEventListener("wheel",     wheel);
-      el.removeEventListener("touchmove", touchmove);
+      box.removeEventListener("wheel",     onWheel);
+      box.removeEventListener("touchmove", onTouchMove);
     };
   }, []);
 
-  // Souris
   const onMouseDown = e => {
-    isInteracting.current = true;
     drag.current = { sx: e.clientX - tf.current.x, sy: e.clientY - tf.current.y };
   };
   const onMouseMove = e => {
     if (!drag.current) return;
-    applyTf({ ...tf.current,
-      x: e.clientX - drag.current.sx,
-      y: e.clientY - drag.current.sy,
-    });
+    tf.current.x = e.clientX - drag.current.sx;
+    tf.current.y = e.clientY - drag.current.sy;
+    commit();
   };
-  const onMouseUp = () => { drag.current = null; isInteracting.current = false; };
+  const onMouseUp = () => { drag.current = null; };
 
-  // Touch
   const onTouchStart = e => {
-    isInteracting.current = true;
     if (e.touches.length === 1) {
-      drag.current = {
-        sx: e.touches[0].clientX - tf.current.x,
-        sy: e.touches[0].clientY - tf.current.y,
-      };
+      drag.current = { sx: e.touches[0].clientX - tf.current.x, sy: e.touches[0].clientY - tf.current.y };
       pinch.current = null;
     } else if (e.touches.length === 2) {
       drag.current = null;
-      const [a, b] = [e.touches[0], e.touches[1]];
+      const [a,b] = [e.touches[0],e.touches[1]];
       pinch.current = {
-        dist: Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY),
-        mx: (a.clientX + b.clientX) / 2,
-        my: (a.clientY + b.clientY) / 2,
-        scale: tf.current.scale,
-        x: tf.current.x,
-        y: tf.current.y,
+        d: Math.hypot(a.clientX-b.clientX, a.clientY-b.clientY),
+        mx:(a.clientX+b.clientX)/2, my:(a.clientY+b.clientY)/2,
+        s: tf.current.s, x: tf.current.x, y: tf.current.y,
       };
     }
   };
   const onTouchEnd = e => {
     if (e.touches.length < 2) pinch.current = null;
-    if (e.touches.length === 0) { drag.current = null; isInteracting.current = false; }
+    if (e.touches.length === 0) drag.current = null;
   };
-
-  const resetView = () => applyTf({ x:0, y:0, scale:1 });
 
   const KW = ({ words, color }) => (
     <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:"4px"}}>
       {words.map((w,i) => (
         <span key={i} style={{fontSize:"11px",color,fontFamily:"DM Sans,sans-serif",
           fontWeight:600,lineHeight:1.3,textAlign:"center",
-          background:"rgba(255,255,255,.7)",padding:"1px 5px",borderRadius:"4px"}}>{w}</span>
+          background:"rgba(255,255,255,.8)",padding:"1px 6px",borderRadius:"4px"}}>{w}</span>
       ))}
     </div>
   );
-
   const Inter = ({ words, label, color }) => (
     <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:"3px"}}>
       <span style={{fontSize:"9px",color,fontStyle:"italic",fontWeight:700,
-        fontFamily:"DM Sans,sans-serif",background:"rgba(255,255,255,.8)",
+        fontFamily:"DM Sans,sans-serif",background:"rgba(255,255,255,.85)",
         padding:"1px 6px",borderRadius:"4px"}}>{label}</span>
       {words.map((w,i) => (
         <span key={i} style={{fontSize:"9px",color,fontFamily:"DM Sans,sans-serif",
@@ -421,43 +399,36 @@ function Venn({ venn }) {
     </div>
   );
 
-  const { x, y, scale } = tf.current;
-
   return (
     <div style={{position:"relative"}}>
-      <p style={{fontSize:"10px",color:"#94A3B8",textAlign:"center",
-        marginBottom:"8px",fontStyle:"italic"}}>
+      <p style={{fontSize:"10px",color:"#94A3B8",textAlign:"center",marginBottom:"8px",fontStyle:"italic"}}>
         Glisse pour naviguer · Pince pour zoomer
       </p>
+
+      {/* Fenêtre de vue — aucun state React dedans */}
       <div
-        ref={boxRef}
         onMouseDown={onMouseDown}
         onMouseMove={onMouseMove}
         onMouseUp={onMouseUp}
         onMouseLeave={onMouseUp}
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
-        style={{
-          width:"100%", height:"340px",
-          overflow:"hidden", cursor: isInteracting.current ? "grabbing" : "grab",
-          borderRadius:"14px", border:"1px solid #E2DDD6",
-          background:"#FAFAF8", position:"relative",
-          touchAction:"none", userSelect:"none",
-        }}>
-        <div style={{
-          position:"absolute",
-          top:"50%", left:"50%",
+        style={{width:"100%",height:"340px",overflow:"hidden",cursor:"grab",
+          borderRadius:"14px",border:"1px solid #E2DDD6",background:"#FAFAF8",
+          position:"relative",touchAction:"none",userSelect:"none"}}>
+
+        {/* Canvas — transform géré par DOM direct, jamais par React */}
+        <div ref={canvasRef} style={{
+          position:"absolute", top:"50%", left:"50%",
           width:`${SZ}px`, height:`${SZ}px`,
           marginLeft:`-${SZ/2}px`, marginTop:`-${SZ/2}px`,
-          transform:`translate(${x}px,${y}px) scale(${scale})`,
-          transformOrigin:"center center",
-          transition: isInteracting.current ? "none" : "transform .12s ease",
+          transformOrigin:"center center", willChange:"transform",
         }}>
           {[
-            {left:"4%",top:"4%",   bg:C+"18", bd:`2px solid ${C}44`},
-            {left:"46%",top:"4%",  bg:B+"18", bd:`2px solid ${B}44`},
-            {left:"4%",top:"46%",  bg:G+"18", bd:`2px solid ${G}44`},
-            {left:"46%",top:"46%", bg:O+"18", bd:`2px solid ${O}44`},
+            {left:"4%",top:"4%",   bg:C+"18",bd:`2px solid ${C}44`},
+            {left:"46%",top:"4%",  bg:B+"18",bd:`2px solid ${B}44`},
+            {left:"4%",top:"46%",  bg:G+"18",bd:`2px solid ${G}44`},
+            {left:"46%",top:"46%", bg:O+"18",bd:`2px solid ${O}44`},
           ].map((s,i)=>(
             <div key={i} style={{position:"absolute",width:"56%",height:"56%",
               borderRadius:"50%",background:s.bg,border:s.bd,left:s.left,top:s.top}}/>
@@ -482,26 +453,23 @@ function Venn({ venn }) {
           <div style={{position:"absolute",bottom:"17%",left:"50%",transform:"translateX(-50%)",width:"20%",textAlign:"center"}}>
             <Inter words={vocation} label="Vocation" color="#8A7830"/>
           </div>
-          <div style={{
-            position:"absolute",top:"50%",left:"50%",
-            transform:"translate(-50%,-50%)",
+          <div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",
             width:"16%",height:"16%",borderRadius:"50%",
             background:"rgba(201,169,110,.2)",border:"2px solid #C9A96E",
-            display:"flex",flexDirection:"column",
-            alignItems:"center",justifyContent:"center",
-            textAlign:"center",zIndex:10,
-          }}>
+            display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+            textAlign:"center",zIndex:10}}>
             <span style={{fontSize:"10px",fontWeight:600,color:"#8B6A30",fontFamily:"Playfair Display,serif",lineHeight:1}}>IKIGAI</span>
             <span style={{fontSize:"7px",color:"#A07840",fontFamily:"DM Sans,sans-serif",lineHeight:1.2,marginTop:"2px"}}>Raison d'être</span>
           </div>
         </div>
       </div>
-      <button onClick={resetView} style={{
-        display:"block",margin:"10px auto 0",
+
+      <button onClick={resetView} style={{display:"block",margin:"10px auto 0",
         fontSize:"11px",color:"#94A3B8",background:"none",
         border:"1px solid #E2DDD6",borderRadius:"6px",
-        padding:"5px 14px",cursor:"pointer",fontFamily:"DM Sans,sans-serif",
-      }}>Recentrer</button>
+        padding:"5px 14px",cursor:"pointer",fontFamily:"DM Sans,sans-serif"}}>
+        Recentrer
+      </button>
     </div>
   );
 }
