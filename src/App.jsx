@@ -1423,15 +1423,20 @@ export default function App(){
               maxWidth:"680px",margin:"0 auto 20px"}}>
               « {out.identity} »
             </h2>
-            <div style={{display:"inline-flex",alignItems:"center",gap:"8px",
-              padding:"7px 18px",background:"rgba(201,169,110,.1)",
-              border:"1px solid rgba(201,169,110,.3)",borderRadius:"999px"}}>
-              <span style={{width:"7px",height:"7px",borderRadius:"50%",
-                background:DM[out.dom]?.color||"#C9A96E"}}/>
-              <p style={{fontSize:"12px",color:"#C9A96E",fontWeight:500}}>
-                Style dominant : {DM[out.dom]?.name} — {DM[out.dom]?.desc}
-              </p>
-            </div>
+            {(()=>{
+              const realDom = sc ? ["D","I","S","C"].reduce((a,d)=>sc[d]>sc[a]?d:a,"D") : out.dom;
+              return (
+                <div style={{display:"inline-flex",alignItems:"center",gap:"8px",
+                  padding:"7px 18px",background:"rgba(201,169,110,.1)",
+                  border:"1px solid rgba(201,169,110,.3)",borderRadius:"999px"}}>
+                  <span style={{width:"7px",height:"7px",borderRadius:"50%",
+                    background:DM[realDom]?.color||"#C9A96E"}}/>
+                  <p style={{fontSize:"12px",color:"#C9A96E",fontWeight:500}}>
+                    Style dominant : {DM[realDom]?.name} — {DM[realDom]?.desc}
+                  </p>
+                </div>
+              );
+            })()}
           </div>
 
           <div style={{maxWidth:"880px",margin:"0 auto",padding:"44px 24px",
@@ -1550,13 +1555,15 @@ export default function App(){
               {/* Extrait du profil DISC dominant */}
               <div style={{background:"rgba(201,169,110,.07)",border:"1px solid rgba(201,169,110,.15)",
                 borderRadius:"10px",padding:"16px 20px"}}>
+                {(()=>{ const realDom = sc ? ["D","I","S","C"].reduce((a,d)=>sc[d]>sc[a]?d:a,"D") : out.dom; return (<>
                 <p style={{fontSize:"12px",color:"#C9A96E",fontWeight:500,marginBottom:"4px",
                   fontFamily:"DM Sans,sans-serif"}}>
-                  Capacité irremplaçable · Style {DM[out.dom]?.name}
+                  Capacité irremplaçable · Style {DM[realDom]?.name}
                 </p>
                 <p style={{fontSize:"13px",color:"#94A3B8",lineHeight:1.7,fontWeight:300}}>
-                  {EDGE[out.dom]}
+                  {EDGE[realDom]}
                 </p>
+                </>);})()}
               </div>
             </div>
 
