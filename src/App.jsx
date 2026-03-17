@@ -782,6 +782,11 @@ export default function App(){
     <div class="badge">Style dominant : ${ {D:"Dominance",I:"Influence",S:"Stabilité",C:"Conformité"}[dom] } — ${ {D:"Décidé · Direct · Orienté résultats",I:"Enthousiaste · Persuasif · Social",S:"Patient · Constant · Empathique",C:"Analytique · Précis · Orienté qualité"}[dom] }</div>
   </div>
 
+  ${out.coherence ? `<div class="section" style="border-left:4px solid #C9A96E;padding-left:20px;background:#FFFDF8">
+    <p class="section-label" style="color:#C9A96E">Lecture du profil</p>
+    <p style="font-style:italic;color:#64748B">${(out.coherence||"").replace(/</g,"&lt;")}</p>
+  </div>` : ""}
+
   <div class="section">
     <p class="section-label">Profil DISC</p>
     <h2>Architecture Comportementale</h2>
@@ -1468,6 +1473,21 @@ export default function App(){
               </p>
               <Venn venn={out.venn}/>
             </div>
+
+            {/* ── LECTURE DU PROFIL ── */}
+            {out.coherence && (
+              <div style={{background:"#FFFFFF",borderRadius:"16px",padding:"28px 36px",
+                border:"1px solid #E2DDD6",
+                borderLeft:"4px solid #C9A96E"}}>
+                <p style={{fontSize:"9px",letterSpacing:"2.5px",textTransform:"uppercase",
+                  color:"#C9A96E",fontWeight:600,marginBottom:"10px"}}>
+                  Lecture du profil
+                </p>
+                <p style={{fontSize:"14px",color:"#475569",lineHeight:1.8,fontWeight:300,fontStyle:"italic"}}>
+                  {out.coherence}
+                </p>
+              </div>
+            )}
 
             {/* ── PROFIL COMPORTEMENTAL ── */}
             <div style={{background:"#FFFFFF",borderRadius:"16px",padding:"36px",border:"1px solid #E2DDD6"}}>
